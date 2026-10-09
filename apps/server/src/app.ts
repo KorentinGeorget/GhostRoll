@@ -75,11 +75,15 @@ export async function buildApp(opts: AppOptions = {}): Promise<FastifyInstance> 
       return { level: LEVEL_1, palette: generateDailyPalette('trial01') };
     }
 
-    if (levelId.startsWith('daily-')) {
-      const seed = levelId.replace('daily-', '');
+    if (levelId.startsWith('daily-') || levelId.startsWith('seed-') || levelId.startsWith('custom-')) {
+      const seed = levelId.replace(/^(daily-|seed-|custom-)/, '');
       return generateDailyLevel(seed);
     }
-    return reply.status(404).send({ error: 'LEVEL_NOT_FOUND' });
+    try {
+      return generateDailyLevel(levelId);
+    } catch {
+      return reply.status(404).send({ error: 'LEVEL_NOT_FOUND' });
+    }
   });
 
   // Auth / Current user

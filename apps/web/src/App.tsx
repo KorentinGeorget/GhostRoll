@@ -11,6 +11,7 @@ import {
 } from '@ghostroll/shared';
 import {
   createSimulation,
+  generateDailyLevel,
   generateDailyPalette,
   initPhysics,
   LEVEL_1,
@@ -166,6 +167,12 @@ export const App: React.FC = () => {
     if (data) {
       setLevel(data.level);
       setPalette(data.palette);
+    } else {
+      // Local client-side generation fallback for custom seeds
+      const seed = trackId.replace(/^(daily-|seed-|custom-|random-)/, '');
+      const localGenerated = generateDailyLevel(seed);
+      setLevel(localGenerated.level);
+      setPalette(localGenerated.palette);
     }
   }, [level.id]);
 
@@ -197,7 +204,8 @@ export const App: React.FC = () => {
       if (profile) setUserProfile(profile);
     });
 
-    const requestedTrack = urlParams?.get('track') || urlParams?.get('level');
+    const requestedSeed = urlParams?.get('seed');
+    const requestedTrack = urlParams?.get('track') || urlParams?.get('level') || (requestedSeed ? `seed-${requestedSeed}` : null);
 
     setArchiveLoading(true);
     Promise.all([fetchDailyLevel(), fetchArchive()]).then(([dailyData, archiveData]) => {
@@ -211,15 +219,16 @@ export const App: React.FC = () => {
           date: dailyData.date,
         });
 
-        // If user didn't explicitly request trial track via URL param, default to today's daily
-        if (requestedTrack !== 'trial-level-1' && requestedTrack !== LEVEL_1.id) {
+        if (requestedTrack) {
+          handleSelectTrack(requestedTrack);
+        } else {
           setLevel(dailyData.level);
           setPalette(dailyData.palette);
         }
       }
       setArchiveLoading(false);
     });
-  }, []);
+  }, [handleSelectTrack]);
 
   // Refresh leaderboard whenever level changes
   useEffect(() => {
@@ -531,6 +540,10 @@ export const App: React.FC = () => {
 
       {/* Floating Jump Button for Mobile */}
       <button
+        onPointerDown={(e) => {
+          e.preventDefault();
+          triggerJump();
+        }}
         onClick={triggerJump}
         className="md:hidden absolute bottom-6 right-6 z-20 w-18 h-18 rounded-3xl glass-panel-elevated flex flex-col items-center justify-center pointer-events-auto active:scale-90 transition-transform bg-gradient-to-br from-cyan-500/25 to-indigo-600/30 border border-cyan-400/50 text-cyan-200 shadow-2xl shadow-cyan-500/20 select-none touch-none ring-2 ring-cyan-400/20 cursor-pointer"
         aria-label="Jump"

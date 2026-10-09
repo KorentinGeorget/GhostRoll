@@ -33,11 +33,16 @@ export async function validateReplay(req: ValidationRequest): Promise<Validation
   let level: LevelDefinition | null = null;
   if (req.levelId === LEVEL_1.id || req.levelId === 'trial-level-1') {
     level = LEVEL_1;
-  } else if (req.levelId.startsWith('daily-')) {
-
-    const seed = req.levelId.replace('daily-', '');
+  } else if (req.levelId.startsWith('daily-') || req.levelId.startsWith('seed-') || req.levelId.startsWith('custom-')) {
+    const seed = req.levelId.replace(/^(daily-|seed-|custom-)/, '');
     try {
       level = generateDailyLevel(seed).level;
+    } catch {
+      level = null;
+    }
+  } else {
+    try {
+      level = generateDailyLevel(req.levelId).level;
     } catch {
       level = null;
     }

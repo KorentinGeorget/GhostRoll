@@ -1,5 +1,5 @@
-import React from 'react';
-import { Calendar, Check, Compass, Sparkles, X } from 'lucide-react';
+import React, { useState } from 'react';
+import { Calendar, Check, Compass, Dices, Flame, Sparkles, Swords, Share2, X } from 'lucide-react';
 import { ArchiveItem } from '../api/client.js';
 import { Language, TRANSLATIONS } from '../i18n/translations.js';
 
@@ -31,7 +31,38 @@ export const TrackSelectorModal: React.FC<TrackSelectorModalProps> = ({
   lang = 'en',
 }) => {
   const t = TRANSLATIONS[lang];
+  const [customSeedInput, setCustomSeedInput] = useState('');
+  const [copiedLink, setCopiedLink] = useState(false);
+
   if (!isOpen) return null;
+
+  const handleRollRandom = () => {
+    const prefixes = ['TITAN', 'NEON', 'VORTEX', 'ZENITH', 'CYBER', 'HYPER', 'PULSE', 'APEX', 'DRIFT', 'NOVA'];
+    const p = prefixes[Math.floor(Math.random() * prefixes.length)];
+    const num = Math.floor(100 + Math.random() * 900);
+    const newSeed = `seed-${p}-${num}`;
+    onSelectLevel(newSeed);
+    onClose();
+  };
+
+  const handleLaunchCustomSeed = (e: React.FormEvent) => {
+    e.preventDefault();
+    const clean = customSeedInput.trim().toUpperCase().replace(/[^A-Z0-9_-]/g, '-');
+    if (!clean) return;
+    onSelectLevel(`seed-${clean}`);
+    onClose();
+  };
+
+  const handleCopyLink = () => {
+    const seed = customSeedInput.trim().toUpperCase() || currentLevelId.replace(/^(daily-|seed-|custom-|random-)/, '');
+    const url = `${window.location.origin}/?seed=${encodeURIComponent(seed)}`;
+    if (navigator.clipboard) {
+      navigator.clipboard.writeText(url).then(() => {
+        setCopiedLink(true);
+        setTimeout(() => setCopiedLink(false), 2500);
+      });
+    }
+  };
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/75 backdrop-blur-xl animate-in fade-in duration-200 pointer-events-auto">
@@ -65,6 +96,64 @@ export const TrackSelectorModal: React.FC<TrackSelectorModalProps> = ({
 
         {/* Scrollable list */}
         <div className="overflow-y-auto my-4 space-y-4 pr-1.5 custom-scrollbar">
+          {/* Quick Actions: Random Level & Friend Challenge */}
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+            {/* Random Track Roll */}
+            <button
+              onClick={handleRollRandom}
+              className="p-4 rounded-2xl bg-gradient-to-br from-purple-950/70 via-indigo-950/60 to-slate-900/80 hover:from-purple-900/80 hover:to-indigo-900/80 border border-purple-500/30 hover:border-purple-400/60 transition shadow-lg text-left flex items-center space-x-3.5 group cursor-pointer active:scale-[0.98]"
+            >
+              <div className="p-3 rounded-2xl bg-purple-500/20 text-purple-300 border border-purple-500/40 group-hover:rotate-12 transition-transform shadow-md">
+                <Dices className="w-5 h-5" />
+              </div>
+              <div>
+                <h3 className="font-black text-white text-sm md:text-base tracking-tight flex items-center space-x-1.5">
+                  <span>{t.randomTrack}</span>
+                  <span className="text-[9px] px-1.5 py-0.5 rounded-full bg-purple-500/30 text-purple-200 border border-purple-400/40 font-mono">
+                    INF
+                  </span>
+                </h3>
+                <p className="text-xs text-slate-400 font-medium">{t.generateRandom}</p>
+              </div>
+            </button>
+
+            {/* Friend Challenge Card */}
+            <div className="p-4 rounded-2xl bg-slate-900/60 border border-white/10 flex flex-col justify-between">
+              <div className="flex items-center justify-between mb-2">
+                <div className="flex items-center space-x-2 text-xs font-black uppercase tracking-wider text-cyan-300">
+                  <Swords className="w-3.5 h-3.5 text-cyan-400" />
+                  <span>{t.challengeFriend}</span>
+                </div>
+                <button
+                  type="button"
+                  onClick={handleCopyLink}
+                  className="text-[11px] font-bold text-cyan-300 hover:text-cyan-200 flex items-center space-x-1 px-2 py-0.5 rounded-lg bg-cyan-500/15 border border-cyan-500/30 hover:bg-cyan-500/25 transition active:scale-95 cursor-pointer"
+                  title={t.copyLink}
+                >
+                  <Share2 className="w-3 h-3" />
+                  <span>{copiedLink ? t.linkCopied : t.copyLink}</span>
+                </button>
+              </div>
+
+              <form onSubmit={handleLaunchCustomSeed} className="flex space-x-2">
+                <input
+                  type="text"
+                  value={customSeedInput}
+                  onChange={(e) => setCustomSeedInput(e.target.value)}
+                  placeholder={t.enterSeed}
+                  className="flex-1 bg-black/40 border border-white/10 rounded-xl px-3 py-1.5 text-xs text-white placeholder-slate-500 focus:outline-none focus:border-cyan-400 font-mono uppercase"
+                />
+                <button
+                  type="submit"
+                  disabled={!customSeedInput.trim()}
+                  className="px-3 py-1.5 rounded-xl bg-cyan-500 hover:bg-cyan-400 disabled:opacity-40 disabled:hover:bg-cyan-500 text-slate-950 font-black text-xs transition active:scale-95 cursor-pointer whitespace-nowrap"
+                >
+                  {t.playSeed}
+                </button>
+              </form>
+            </div>
+          </div>
+
           {/* Today's Daily Section */}
           <div>
             <div className="flex items-center space-x-2 text-xs font-black uppercase tracking-wider text-amber-300 mb-2.5">
@@ -96,6 +185,10 @@ export const TrackSelectorModal: React.FC<TrackSelectorModalProps> = ({
                       <span className="flex items-center space-x-1 whitespace-nowrap shrink-0 text-[10px] uppercase font-black tracking-wider px-2 py-0.5 rounded-full bg-emerald-500/20 text-emerald-300 border border-emerald-500/40">
                         <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse" />
                         <span>{t.activeToday}</span>
+                      </span>
+                      <span className="flex items-center space-x-1 whitespace-nowrap shrink-0 text-[10px] uppercase font-black tracking-wider px-2 py-0.5 rounded-full bg-rose-500/20 text-rose-300 border border-rose-500/40">
+                        <Flame className="w-3 h-3 text-rose-400" />
+                        <span>{t.hardTrack}</span>
                       </span>
                     </div>
                     <span className="text-xs text-slate-400 font-mono">

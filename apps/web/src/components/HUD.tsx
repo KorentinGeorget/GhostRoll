@@ -111,7 +111,10 @@ export const HUD: React.FC<HUDProps> = ({
       timeSeconds: tick * FIXED_DT,
       rank: leaderboardRank,
       finalHash: stateHash,
-      url: window.location.origin,
+      url:
+        typeof window !== 'undefined'
+          ? `${window.location.origin}${_levelId ? `?seed=${encodeURIComponent(_levelId.replace(/^(daily-|seed-|custom-)/, ''))}` : ''}`
+          : '',
     });
 
     if (navigator.clipboard) {
