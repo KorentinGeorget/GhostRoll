@@ -73,4 +73,36 @@ describe('Deterministic Physics & Golden Replay', () => {
 
     expect(stateA.hash).not.toEqual(stateB.hash);
   });
+
+  it('applies deterministic jump impulse when grounded and ignores mid-air jumps', () => {
+    const sim = createSimulation(LEVEL_1);
+
+    // Roll until grounded on track (30 ticks)
+    for (let i = 0; i < 30; i++) {
+      sim.step({ tiltX: 0, tiltZ: 30 });
+    }
+
+    const stateBeforeJump = sim.getState();
+    const yBefore = stateBeforeJump.ball.position[1];
+
+    // Trigger jump
+    const stateJump = sim.step({ tiltX: 0, tiltZ: 30, jump: true });
+    expect(stateJump.ball.velocity[1]).toBeGreaterThan(4.0);
+
+    // Let ball rise in air for 10 ticks
+    for (let i = 0; i < 10; i++) {
+      sim.step({ tiltX: 0, tiltZ: 30 });
+    }
+
+    const stateInAir = sim.getState();
+    expect(stateInAir.ball.position[1]).toBeGreaterThan(yBefore + 0.5);
+
+    // Mid-air jump attempt must be rejected (no double jump)
+    const velBeforeMidAir = stateInAir.ball.velocity[1];
+    const stateMidAirAttempt = sim.step({ tiltX: 0, tiltZ: 30, jump: true });
+    // Velocity must decrease due to gravity, not receive new upward boost
+    expect(stateMidAirAttempt.ball.velocity[1]).toBeLessThan(velBeforeMidAir);
+
+    sim.destroy();
+  });
 });

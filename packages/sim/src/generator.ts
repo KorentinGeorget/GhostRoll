@@ -27,10 +27,10 @@ export function generateDailyLevel(seed: string): GeneratedDailyLevel {
   // Start tile at origin
   let curX = 0;
   let curY = 1.0;
-  let curZ = 0;
+  let curZ = 2.5; // Leading edge of the 5x5 start platform
   let heading: Heading = { dx: 0, dz: 1 }; // facing forward along +Z
 
-  // 1. Start Platform
+  // 1. Start Platform (centered at [0, curY, 0])
   colliders.push({
     type: 'box',
     halfExtents: [2.5, 0.25, 2.5],
@@ -92,10 +92,10 @@ export function generateDailyLevel(seed: string): GeneratedDailyLevel {
     if (pieceType === 'straight' || pieceType === 'ramp') {
       const length = rng.nextInt(6, 8);
       const isRamp = pieceType === 'ramp';
-      const dY = isRamp ? -0.5 : -0.2;
+      const dY = isRamp ? -0.4 : -0.15;
 
-      const posX = curX + heading.dx * (length / 2 + 2.0);
-      const posZ = curZ + heading.dz * (length / 2 + 2.0);
+      const posX = curX + heading.dx * (length / 2);
+      const posZ = curZ + heading.dz * (length / 2);
       const posY = curY + dY / 2;
 
       const hx = heading.dx !== 0 ? length / 2 : 2.0;
@@ -121,18 +121,18 @@ export function generateDailyLevel(seed: string): GeneratedDailyLevel {
       if (rng.nextFloat() > 0.45) {
         const perpX = -heading.dz;
         const perpZ = heading.dx;
-        const sideOffset = rng.choice([-1.3, 1.3]);
+        const sideOffset = rng.choice([-1.2, 1.2]);
 
         const bumperX = posX + perpX * sideOffset;
         const bumperZ = posZ + perpZ * sideOffset;
-        const bumperY = posY + 0.5;
+        const bumperY = posY + 0.45;
 
         colliders.push({
           type: 'cylinder',
           halfHeight: 0.35,
-          radius: 0.5,
+          radius: 0.45,
           position: [bumperX, bumperY, bumperZ],
-          restitution: 1.6,
+          restitution: 1.2,
           friction: 0.1,
           isBumper: true,
         });
@@ -141,22 +141,22 @@ export function generateDailyLevel(seed: string): GeneratedDailyLevel {
           id: `vis-bumper-${tileIndex++}`,
           type: 'bumper',
           position: [bumperX, bumperY, bumperZ],
-          scale: [1.0, 0.7, 1.0],
+          scale: [0.9, 0.7, 0.9],
           color: palette.bumper,
         });
       }
 
-      curX += heading.dx * (length + 0.2);
-      curZ += heading.dz * (length + 0.2);
+      curX += heading.dx * length;
+      curZ += heading.dz * length;
       curY += dY;
       prevPieceType = pieceType;
     } else if (pieceType === 'bridge') {
       // Narrow balance beam
       const length = 7.0;
-      const dY = -0.3;
+      const dY = -0.2;
 
-      const posX = curX + heading.dx * (length / 2 + 1.8);
-      const posZ = curZ + heading.dz * (length / 2 + 1.8);
+      const posX = curX + heading.dx * (length / 2);
+      const posZ = curZ + heading.dz * (length / 2);
       const posY = curY + dY / 2;
 
       const hx = heading.dx !== 0 ? length / 2 : 1.2;
@@ -178,15 +178,15 @@ export function generateDailyLevel(seed: string): GeneratedDailyLevel {
         color: palette.bridge,
       });
 
-      curX += heading.dx * (length + 0.2);
-      curZ += heading.dz * (length + 0.2);
+      curX += heading.dx * length;
+      curZ += heading.dz * length;
       curY += dY;
       prevPieceType = 'bridge';
     } else if (pieceType === 'corner_right' || pieceType === 'corner_left') {
       // Turn corner platform
       const isRight = pieceType === 'corner_right';
       const turnSize = 5.0;
-      const dY = -0.3;
+      const dY = -0.2;
 
       const cornerX = curX + heading.dx * 2.5;
       const cornerZ = curZ + heading.dz * 2.5;
@@ -221,6 +221,7 @@ export function generateDailyLevel(seed: string): GeneratedDailyLevel {
         heading.dz = oldDx;
       }
 
+      // Exit edge of corner
       curX = cornerX + heading.dx * 2.5;
       curZ = cornerZ + heading.dz * 2.5;
       curY = cornerY;
@@ -230,9 +231,9 @@ export function generateDailyLevel(seed: string): GeneratedDailyLevel {
 
   // Final Goal Arena
   const goalPadSize = 7.0;
-  const goalX = curX + heading.dx * (goalPadSize / 2 + 1.0);
-  const goalZ = curZ + heading.dz * (goalPadSize / 2 + 1.0);
-  const goalY = curY - 0.4;
+  const goalX = curX + heading.dx * (goalPadSize / 2);
+  const goalZ = curZ + heading.dz * (goalPadSize / 2);
+  const goalY = curY - 0.3;
 
   colliders.push({
     type: 'box',
@@ -243,8 +244,8 @@ export function generateDailyLevel(seed: string): GeneratedDailyLevel {
   });
 
   // Back guard rail behind goal so ball doesn't overshoot
-  const backRailX = goalX + heading.dx * (goalPadSize / 2 - 0.1);
-  const backRailZ = goalZ + heading.dz * (goalPadSize / 2 - 0.1);
+  const backRailX = goalX + heading.dx * (goalPadSize / 2 - 0.15);
+  const backRailZ = goalZ + heading.dz * (goalPadSize / 2 - 0.15);
   const railHx = heading.dx !== 0 ? 0.2 : goalPadSize / 2;
   const railHz = heading.dz !== 0 ? 0.2 : goalPadSize / 2;
 

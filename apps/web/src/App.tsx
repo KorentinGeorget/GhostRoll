@@ -108,6 +108,7 @@ export const App: React.FC = () => {
   const {
     getInput,
     setVirtualTilt,
+    triggerJump,
     rawTilt,
     gyroSupported,
     gyroActive,
@@ -281,6 +282,10 @@ export const App: React.FC = () => {
         if (state.status !== 'won' && state.status !== 'dead') {
           const input = getInput();
           recordedInputs.current.push(input);
+
+          if (input.jump) {
+            soundFX.playJump();
+          }
 
           state = sim.step(input);
 
@@ -508,6 +513,18 @@ export const App: React.FC = () => {
 
       {/* Touch Joystick on Mobile (only if Gyro is not active) */}
       {!gyroActive && <VirtualJoystick onTiltChange={setVirtualTilt} />}
+
+      {/* Floating Jump Button for Mobile */}
+      <button
+        onClick={triggerJump}
+        className="md:hidden absolute bottom-6 right-6 z-20 w-16 h-16 rounded-2xl glass-panel flex flex-col items-center justify-center pointer-events-auto active:scale-90 transition-transform bg-sky-500/25 border-sky-400/40 text-sky-200 shadow-2xl backdrop-blur-md select-none touch-none"
+        aria-label="Jump"
+      >
+        <span className="text-lg leading-none font-black">▲</span>
+        <span className="text-[10px] font-extrabold uppercase tracking-wider mt-0.5">
+          {lang === 'fr' ? 'SAUT' : 'JUMP'}
+        </span>
+      </button>
     </div>
   );
 };

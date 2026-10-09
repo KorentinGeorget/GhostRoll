@@ -4,6 +4,7 @@ import { InputFrame } from '@ghostroll/shared';
 export interface ControlsState {
   getInput: () => InputFrame;
   setVirtualTilt: (x: number, z: number) => void;
+  triggerJump: () => void;
   rawTilt: { x: number; z: number };
   gyroSupported: boolean;
   gyroActive: boolean;
@@ -15,6 +16,7 @@ export interface ControlsState {
 
 export function useControls(): ControlsState {
   const keysDown = useRef<{ [key: string]: boolean }>({});
+  const jumpRequested = useRef(false);
   const currentTilt = useRef<{ x: number; z: number }>({ x: 0, z: 0 });
   const virtualTilt = useRef<{ x: number; z: number }>({ x: 0, z: 0 });
   const gyroTilt = useRef<{ x: number; z: number }>({ x: 0, z: 0 });
@@ -46,6 +48,9 @@ export function useControls(): ControlsState {
         e.preventDefault();
       }
       keysDown.current[e.code] = true;
+      if (e.code === 'Space' || e.key === ' ') {
+        jumpRequested.current = true;
+      }
     };
 
     const handleKeyUp = (e: KeyboardEvent) => {
@@ -189,10 +194,18 @@ export function useControls(): ControlsState {
     const roundedX = Math.round(current.x);
     const roundedZ = Math.round(current.z);
 
+    const jump = jumpRequested.current;
+    jumpRequested.current = false;
+
     return {
       tiltX: Math.max(-127, Math.min(127, roundedX)),
       tiltZ: Math.max(-127, Math.min(127, roundedZ)),
+      ...(jump ? { jump: true } : {}),
     };
+  }, []);
+
+  const triggerJump = useCallback(() => {
+    jumpRequested.current = true;
   }, []);
 
   // Periodic debug display sync
@@ -218,6 +231,7 @@ export function useControls(): ControlsState {
   return {
     getInput,
     setVirtualTilt,
+    triggerJump,
     rawTilt: debugTilt,
     gyroSupported,
     gyroActive,

@@ -10,6 +10,8 @@ export interface InputFrame {
   /** Tilt around X/Z axes clamped to [-127, 127] */
   tiltX: number;
   tiltZ: number;
+  /** Optional jump trigger */
+  jump?: boolean;
 }
 
 export type SimStatus = 'ready' | 'playing' | 'won' | 'dead';
@@ -112,6 +114,7 @@ export interface ReplayPayload {
 export const InputFrameSchema = z.object({
   tiltX: z.number().int().min(-127).max(127),
   tiltZ: z.number().int().min(-127).max(127),
+  jump: z.boolean().optional(),
 });
 
 export const ReplayPayloadSchema = z.object({

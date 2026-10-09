@@ -15,7 +15,13 @@ interface CanvasViewProps {
   tilt: { x: number; z: number };
 }
 
-function CameraRig({ target }: { target: [number, number, number] }) {
+function CameraRig({
+  target,
+  tilt,
+}: {
+  target: [number, number, number];
+  tilt: { x: number; z: number };
+}) {
   const currentLookAt = useRef(new THREE.Vector3(target[0], target[1], target[2]));
 
   useFrame((state, delta) => {
@@ -24,11 +30,15 @@ function CameraRig({ target }: { target: [number, number, number] }) {
     // Smoothly track target with slight lookahead
     currentLookAt.current.lerp(targetVec, Math.min(1, delta * 8));
 
+    // Dynamic camera banking and pitch from player tilt
+    const bankAngle = -(tilt.x / 127) * 0.04;
+    const pitchOffset = (tilt.z / 127) * 0.5;
+
     // Isometric chase camera offset (behind and above ball)
     const desiredCamPos = new THREE.Vector3(
       currentLookAt.current.x - 6,
       currentLookAt.current.y + 11,
-      currentLookAt.current.z - 11
+      currentLookAt.current.z - 11 + pitchOffset
     );
 
     state.camera.position.lerp(desiredCamPos, Math.min(1, delta * 6));
@@ -37,6 +47,7 @@ function CameraRig({ target }: { target: [number, number, number] }) {
       currentLookAt.current.y + 0.5,
       currentLookAt.current.z + 1.5
     );
+    state.camera.rotation.z += bankAngle;
   });
 
   return null;
@@ -63,10 +74,9 @@ export const CanvasView: React.FC<CanvasViewProps> = ({
       <color attach="background" args={[bg]} />
       <fog attach="fog" args={[fogColor, 30, 80]} />
 
-
       <ambientLight intensity={0.7} />
       <directionalLight
-        position={[15, 25, 10]}
+        position={[ballPos[0] + 12, ballPos[1] + 20, ballPos[2] + 10]}
         intensity={1.8}
         castShadow
         shadow-mapSize={[2048, 2048]}
@@ -80,18 +90,17 @@ export const CanvasView: React.FC<CanvasViewProps> = ({
       />
       <directionalLight position={[-15, 10, -10]} intensity={0.4} color="#6366f1" />
 
-      {/* Track & props */}
+      {/* Track & props (stationary, exactly matching physics colliders) */}
       <BoardMesh level={level} palette={palette} tilt={tilt} />
 
-
-      {/* Active player ball */}
-      <BallMesh position={ballPos} velocity={ballVel} />
+      {/* Active player ball with drop shadow and depth indicator */}
+      <BallMesh position={ballPos} velocity={ballVel} colliders={level.colliders} />
 
       {/* Ghost */}
       <GhostMesh position={ghostPos} />
 
       {/* Dynamic Camera tracking */}
-      <CameraRig target={ballPos} />
+      <CameraRig target={ballPos} tilt={tilt} />
     </Canvas>
   );
 };

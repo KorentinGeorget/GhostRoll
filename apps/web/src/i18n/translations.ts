@@ -18,6 +18,7 @@ export const TRANSLATIONS = {
     noRecordYet: '— No record yet —',
     resetRun: 'Reset run',
     controlsHelp: 'to tilt',
+    jumpKey: 'to jump',
     restartKey: 'Restart',
 
     // Win Modal
@@ -93,6 +94,7 @@ export const TRANSLATIONS = {
     noRecordYet: '— Aucun record —',
     resetRun: 'Recommencer',
     controlsHelp: 'pour incliner',
+    jumpKey: 'pour sauter',
     restartKey: 'Recommencer',
 
     // Win Modal

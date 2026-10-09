@@ -355,6 +355,13 @@ export const HUD: React.FC<HUDProps> = ({
             </span>
             <span className="text-slate-600">|</span>
             <span className="flex items-center space-x-1">
+              <kbd className="px-2 py-0.5 rounded bg-slate-800 border border-slate-700 font-mono text-[11px] text-white">
+                ESPACE
+              </kbd>
+              <span className="text-slate-400">{t.jumpKey}</span>
+            </span>
+            <span className="text-slate-600">|</span>
+            <span className="flex items-center space-x-1">
               <kbd className="px-1.5 py-0.5 rounded bg-slate-800 border border-slate-700 font-mono text-[11px] text-white">
                 R
               </kbd>

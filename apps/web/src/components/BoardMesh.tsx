@@ -9,37 +9,17 @@ interface BoardMeshProps {
   tilt: { x: number; z: number };
 }
 
-export const BoardMesh: React.FC<BoardMeshProps> = ({ level, palette, tilt }) => {
-  const groupRef = useRef<THREE.Group>(null);
+export const BoardMesh: React.FC<BoardMeshProps> = ({ level, palette, tilt: _tilt }) => {
   const goalRingRef = useRef<THREE.Mesh>(null);
 
   useFrame((_, delta) => {
-    if (groupRef.current) {
-      // Smooth visual tilt of the board
-      const targetRotZ = -(tilt.x / 127) * 0.08;
-      const targetRotX = (tilt.z / 127) * 0.08;
-
-      groupRef.current.rotation.z = THREE.MathUtils.damp(
-        groupRef.current.rotation.z,
-        targetRotZ,
-        15,
-        delta
-      );
-      groupRef.current.rotation.x = THREE.MathUtils.damp(
-        groupRef.current.rotation.x,
-        targetRotX,
-        15,
-        delta
-      );
-    }
-
     if (goalRingRef.current) {
       goalRingRef.current.rotation.z += delta * 1.5;
     }
   });
 
   return (
-    <group ref={groupRef}>
+    <group>
       {/* Visual Level Tiles */}
       {level.visuals.map((vis) => {
         if (vis.type === 'bumper') {

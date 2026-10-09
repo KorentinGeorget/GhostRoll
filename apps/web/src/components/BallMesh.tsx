@@ -1,41 +1,152 @@
-import React, { useRef } from 'react';
+import React, { useRef, useMemo } from 'react';
 import * as THREE from 'three';
 import { useFrame } from '@react-three/fiber';
-import { BALL_RADIUS } from '@ghostroll/shared';
+import { BALL_RADIUS, ColliderDef } from '@ghostroll/shared';
 
 interface BallMeshProps {
   position: [number, number, number];
   velocity: [number, number, number];
+  colliders?: ColliderDef[];
 }
 
-export const BallMesh: React.FC<BallMeshProps> = ({ position, velocity }) => {
+function createBlobShadowTexture(): THREE.CanvasTexture {
+  const canvas = document.createElement('canvas');
+  canvas.width = 128;
+  canvas.height = 128;
+  const ctx = canvas.getContext('2d');
+  if (ctx) {
+    const gradient = ctx.createRadialGradient(64, 64, 0, 64, 64, 64);
+    gradient.addColorStop(0, 'rgba(0, 0, 0, 0.85)');
+    gradient.addColorStop(0.5, 'rgba(0, 0, 0, 0.4)');
+    gradient.addColorStop(1, 'rgba(0, 0, 0, 0)');
+    ctx.fillStyle = gradient;
+    ctx.fillRect(0, 0, 128, 128);
+  }
+  const tex = new THREE.CanvasTexture(canvas);
+  return tex;
+}
+
+function findGroundY(x: number, y: number, z: number, colliders?: ColliderDef[]): number | null {
+  if (!colliders) return null;
+  let highest = -999;
+  for (const col of colliders) {
+    if (col.type === 'box') {
+      const [cx, cy, cz] = col.position || [0, 0, 0];
+      const [hx, hy, hz] = col.halfExtents;
+      if (x >= cx - hx && x <= cx + hx && z >= cz - hz && z <= cz + hz) {
+        const topY = cy + hy;
+        if (topY <= y + 0.1 && topY > highest) {
+          highest = topY;
+        }
+      }
+    }
+  }
+  return highest > -900 ? highest : null;
+}
+
+export const BallMesh: React.FC<BallMeshProps> = ({ position, velocity, colliders }) => {
   const meshRef = useRef<THREE.Mesh>(null);
+  const shadowMeshRef = useRef<THREE.Mesh>(null);
+  const tetherMeshRef = useRef<THREE.Mesh>(null);
+
+  const shadowTexture = useMemo(() => {
+    if (typeof document !== 'undefined') {
+      return createBlobShadowTexture();
+    }
+    return null;
+  }, []);
 
   useFrame((_, delta) => {
+    const px = position[0];
+    const py = position[1];
+    const pz = position[2];
+
     if (meshRef.current) {
-      meshRef.current.position.set(position[0], position[1], position[2]);
+      meshRef.current.position.set(px, py, pz);
 
       // Roll ball according to linear velocity: dtheta = (v / R) * dt
       const vx = velocity[0];
       const vz = velocity[2];
 
-      // Rotation around Z axis caused by movement along X: -vx / R
       meshRef.current.rotation.z -= (vx / BALL_RADIUS) * delta;
-      // Rotation around X axis caused by movement along Z: vz / R
       meshRef.current.rotation.x += (vz / BALL_RADIUS) * delta;
+    }
+
+    // Dynamic ground drop shadow & vertical tether
+    const groundY = findGroundY(px, py, pz, colliders);
+    const isOverGround = groundY !== null;
+    const altitude = isOverGround ? Math.max(0, py - BALL_RADIUS - groundY) : 999;
+
+    if (shadowMeshRef.current) {
+      if (isOverGround && altitude < 15.0) {
+        shadowMeshRef.current.visible = true;
+        shadowMeshRef.current.position.set(px, groundY + 0.02, pz);
+
+        // Scale shadow slightly larger and fade with altitude
+        const scaleFactor = Math.min(2.2, 1.0 + altitude * 0.22);
+        shadowMeshRef.current.scale.set(scaleFactor, scaleFactor, 1);
+
+        const mat = shadowMeshRef.current.material as THREE.MeshBasicMaterial;
+        if (mat) {
+          mat.opacity = THREE.MathUtils.clamp(0.8 / (1.0 + altitude * 0.65), 0.15, 0.85);
+        }
+      } else {
+        shadowMeshRef.current.visible = false;
+      }
+    }
+
+    if (tetherMeshRef.current) {
+      // Show vertical guide tether only when significantly airborne
+      if (isOverGround && altitude > 0.25 && altitude < 10.0) {
+        tetherMeshRef.current.visible = true;
+        const tetherHeight = altitude;
+        tetherMeshRef.current.scale.set(1, tetherHeight, 1);
+        tetherMeshRef.current.position.set(px, groundY + tetherHeight / 2, pz);
+      } else {
+        tetherMeshRef.current.visible = false;
+      }
     }
   });
 
   return (
-    <mesh ref={meshRef} position={position} castShadow>
-      <sphereGeometry args={[BALL_RADIUS, 32, 32]} />
-      <meshStandardMaterial
-        color="#38bdf8"
-        roughness={0.15}
-        metalness={0.85}
-        emissive="#0284c7"
-        emissiveIntensity={0.25}
-      />
-    </mesh>
+    <group>
+      {/* 1. Main player sphere */}
+      <mesh ref={meshRef} position={position} castShadow>
+        <sphereGeometry args={[BALL_RADIUS, 32, 32]} />
+        <meshStandardMaterial
+          color="#38bdf8"
+          roughness={0.15}
+          metalness={0.85}
+          emissive="#0284c7"
+          emissiveIntensity={0.25}
+        />
+      </mesh>
+
+      {/* 2. Projected Ground Blob Shadow */}
+      <mesh
+        ref={shadowMeshRef}
+        rotation={[-Math.PI / 2, 0, 0]}
+        position={[position[0], position[1] - BALL_RADIUS, position[2]]}
+      >
+        <planeGeometry args={[BALL_RADIUS * 2.2, BALL_RADIUS * 2.2]} />
+        <meshBasicMaterial
+          map={shadowTexture}
+          transparent
+          opacity={0.8}
+          depthWrite={false}
+        />
+      </mesh>
+
+      {/* 3. Airborne Vertical Altitude Tether / Laser Guide */}
+      <mesh ref={tetherMeshRef} visible={false}>
+        <cylinderGeometry args={[0.015, 0.015, 1, 8]} />
+        <meshBasicMaterial
+          color="#38bdf8"
+          transparent
+          opacity={0.35}
+          depthWrite={false}
+        />
+      </mesh>
+    </group>
   );
 };
