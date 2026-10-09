@@ -98,6 +98,18 @@ test.describe('Cross-Browser Determinism Invariant', () => {
     await expect(page.locator('text=Course Selector')).toBeVisible();
     await expect(page.locator("text=Today's Daily Race")).toBeVisible();
     await expect(page.locator('text=Neon Dawn')).toBeVisible();
+
+    // Switch to Neon Dawn track and verify level changes and URL updates
+    await page.click('button:has-text("Neon Dawn")');
+    await expect(page.locator('text=Course Selector')).not.toBeVisible();
+    await expect(page.locator('text=Neon Dawn').first()).toBeVisible();
+    await expect(page).toHaveURL(/track=trial-level-1/);
+
+    // Switch to a random level and verify level changes
+    await page.click('button:has-text("Courses")');
+    await page.click('button:has-text("Random Track")');
+    await expect(page.locator('text=Course Selector')).not.toBeVisible();
+    await expect(page).toHaveURL(/track=seed-/);
   });
 
   test('opens profile modal, generates device sync code, and switches language to French', async ({ page }) => {

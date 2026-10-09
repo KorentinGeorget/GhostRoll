@@ -22,12 +22,15 @@ function CameraRig({
   target = [0, 1, 0],
   velocity = [0, 0, 0],
   tilt,
+  levelId,
 }: {
   liveRenderRef?: React.RefObject<LiveRenderState>;
   target?: [number, number, number];
   velocity?: [number, number, number];
   tilt: { x: number; z: number };
+  levelId?: string;
 }) {
+  const lastLevelId = useRef(levelId);
   const currentCamPos = useRef(
     new THREE.Vector3(target[0] - 6, target[1] + 11, target[2] - 11)
   );
@@ -58,6 +61,15 @@ function CameraRig({
       tz = target[2];
       vx = velocity[0];
       vz = velocity[2];
+    }
+
+    // Snap camera instantly on level change
+    if (levelId && lastLevelId.current !== levelId) {
+      lastLevelId.current = levelId;
+      currentLookAt.current.set(tx, ty + 0.3, tz);
+      currentCamPos.current.set(tx - 6, ty + 11, tz - 11);
+      currentBank.current = 0;
+      currentPitch.current = 0;
     }
 
     // Snap instantly on reset or huge teleport
@@ -235,6 +247,7 @@ export const CanvasView: React.FC<CanvasViewProps> = ({
         target={ballPos}
         velocity={ballVel}
         tilt={tilt}
+        levelId={level.id}
       />
     </Canvas>
   );

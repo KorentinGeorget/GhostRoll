@@ -164,24 +164,42 @@ export const App: React.FC = () => {
 
   // Track selection handler
   const handleSelectTrack = useCallback(async (trackId: string) => {
-    if (trackId === level.id) return;
+    if (!trackId) return;
+
+    // Keep browser URL search in sync with current track immediately
+    if (typeof window !== 'undefined') {
+      const url = new URL(window.location.href);
+      url.searchParams.set('track', trackId);
+      url.searchParams.delete('seed');
+      url.searchParams.delete('level');
+      window.history.replaceState({}, '', url.toString());
+    }
+
+    let nextLevel: LevelDefinition | null = null;
+    let nextPalette: LevelPalette | null = null;
+
     if (trackId === LEVEL_1.id || trackId === 'trial-level-1') {
-      setLevel(LEVEL_1);
-      setPalette(generateDailyPalette('trial01'));
-      return;
-    }
-    const data = await fetchLevel(trackId);
-    if (data) {
-      setLevel(data.level);
-      setPalette(data.palette);
+      nextLevel = LEVEL_1;
+      nextPalette = generateDailyPalette('trial01');
     } else {
-      // Local client-side generation fallback for custom seeds
-      const seed = trackId.replace(/^(daily-|seed-|custom-|random-)/, '');
-      const localGenerated = generateDailyLevel(seed);
-      setLevel(localGenerated.level);
-      setPalette(localGenerated.palette);
+      const data = await fetchLevel(trackId);
+      if (data) {
+        nextLevel = data.level;
+        nextPalette = data.palette;
+      } else {
+        // Local client-side generation fallback for custom seeds
+        const seed = trackId.replace(/^(daily-|seed-|custom-|random-)/, '');
+        const localGenerated = generateDailyLevel(seed);
+        nextLevel = localGenerated.level;
+        nextPalette = localGenerated.palette;
+      }
     }
-  }, [level.id]);
+
+    if (nextLevel && nextPalette) {
+      setLevel(nextLevel);
+      setPalette(nextPalette);
+    }
+  }, []);
 
   // Load User & Leaderboard from Backend
   const refreshLeaderboard = useCallback(async () => {
@@ -200,7 +218,7 @@ export const App: React.FC = () => {
     setLeaderboardLoading(false);
   }, [level.id]);
 
-  // Initial user fetch & daily/archive loading
+  // Initial user fetch & daily/archive loading (mount only)
   useEffect(() => {
     const urlParams = typeof window !== 'undefined' ? new URLSearchParams(window.location.search) : null;
     if (urlParams?.get('auth') === 'success') {
@@ -235,7 +253,8 @@ export const App: React.FC = () => {
       }
       setArchiveLoading(false);
     });
-  }, [handleSelectTrack]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   // Refresh leaderboard whenever level changes
   useEffect(() => {
@@ -247,6 +266,10 @@ export const App: React.FC = () => {
     let mounted = true;
     initPhysics().then(() => {
       if (!mounted) return;
+      const oldSim = simRef.current;
+      simRef.current = null;
+      oldSim?.destroy();
+
       const sim = createSimulation(level);
       simRef.current = sim;
       const initial = sim.getState();
@@ -267,7 +290,9 @@ export const App: React.FC = () => {
 
     return () => {
       mounted = false;
-      simRef.current?.destroy();
+      const oldSim = simRef.current;
+      simRef.current = null;
+      oldSim?.destroy();
     };
   }, [level, handleRestart]);
 
