@@ -99,5 +99,31 @@ test.describe('Cross-Browser Determinism Invariant', () => {
     await expect(page.locator("text=Today's Daily Race")).toBeVisible();
     await expect(page.locator('text=Neon Dawn')).toBeVisible();
   });
+
+  test('opens profile modal, generates device sync code, and switches language to French', async ({ page }) => {
+    await page.goto('/');
+
+    await page.waitForFunction(() => !!(window as any).__GHOSTROLL_SIM__);
+
+    // Click profile / gamer tag button in HUD
+    await page.click('button:has(svg.lucide-user)');
+    await expect(page.locator('text=Player Profile & Device Sync')).toBeVisible();
+
+    // Generate cross-device sync code
+    await page.click('button:has-text("Generate Sync Code")');
+    await expect(page.locator('text=Code expires in 10 min')).toBeVisible();
+
+    // Switch language to French
+    await page.click('button:has-text("Français")');
+    await expect(page.locator('text=Profil Joueur & Synchronisation')).toBeVisible();
+
+    // Close modal
+    await page.click('button:has-text("Fermer")');
+
+    // Verify HUD reflects French translation
+    await expect(page.locator('text=Chrono')).toBeVisible();
+    await expect(page.locator('button:has-text("Pistes")')).toBeVisible();
+  });
 });
+
 

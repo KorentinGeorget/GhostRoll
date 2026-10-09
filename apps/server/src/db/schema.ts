@@ -31,7 +31,19 @@ export const runs = pgTable(
   ]
 );
 
+export const syncCodes = pgTable('sync_codes', {
+  code: text('code').primaryKey(),
+  userId: text('user_id')
+    .notNull()
+    .references(() => users.id, { onDelete: 'cascade' }),
+  expiresAt: timestamp('expires_at', { withTimezone: true }).notNull(),
+  createdAt: timestamp('created_at', { withTimezone: true }).defaultNow().notNull(),
+});
+
 export type User = typeof users.$inferSelect;
 export type NewUser = typeof users.$inferInsert;
 export type Run = typeof runs.$inferSelect;
 export type NewRun = typeof runs.$inferInsert;
+export type SyncCode = typeof syncCodes.$inferSelect;
+export type NewSyncCode = typeof syncCodes.$inferInsert;
+

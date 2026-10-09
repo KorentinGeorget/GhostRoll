@@ -63,7 +63,76 @@ describe('Server API & Replay Verification Pipeline', () => {
     expect(tokenCookie?.value).toBeDefined();
   });
 
+  it('PATCH /api/me updates player display name', async () => {
+    // 1. Get user and cookie
+    const meRes = await app.inject({ method: 'GET', url: '/api/me' });
+    const tokenCookie = meRes.cookies.find((c) => c.name === 'gr_token')!;
+
+    // 2. Patch name
+    const patchRes = await app.inject({
+      method: 'PATCH',
+      url: '/api/me',
+      cookies: { gr_token: tokenCookie.value },
+      payload: { displayName: 'GhostChampion' },
+    });
+
+    expect(patchRes.statusCode).toBe(200);
+    const body = patchRes.json();
+    expect(body.displayName).toBe('GhostChampion');
+
+    // 3. Confirm GET /api/me returns updated name
+    const verifyRes = await app.inject({
+      method: 'GET',
+      url: '/api/me',
+      cookies: { gr_token: tokenCookie.value },
+    });
+    expect(verifyRes.json().displayName).toBe('GhostChampion');
+  });
+
+  it('POST /api/me/sync-code and /api/me/claim-code syncs account across devices', async () => {
+    // Device A: user A
+    const devARes = await app.inject({ method: 'GET', url: '/api/me' });
+    const userA = devARes.json();
+    const tokenA = devARes.cookies.find((c) => c.name === 'gr_token')!.value;
+
+    // Device A generates sync code
+    const codeRes = await app.inject({
+      method: 'POST',
+      url: '/api/me/sync-code',
+      cookies: { gr_token: tokenA },
+    });
+    expect(codeRes.statusCode).toBe(200);
+    const { code } = codeRes.json();
+    expect(code).toHaveLength(6);
+
+    // Device B: user B
+    const devBRes = await app.inject({ method: 'GET', url: '/api/me' });
+    const tokenB = devBRes.cookies.find((c) => c.name === 'gr_token')!.value;
+
+    // Device B claims code
+    const claimRes = await app.inject({
+      method: 'POST',
+      url: '/api/me/claim-code',
+      cookies: { gr_token: tokenB },
+      payload: { code },
+    });
+    expect(claimRes.statusCode).toBe(200);
+    const claimBody = claimRes.json();
+    expect(claimBody.success).toBe(true);
+    expect(claimBody.user.id).toBe(userA.id);
+
+    // Device B cookie now belongs to user A
+    const claimedCookie = claimRes.cookies.find((c) => c.name === 'gr_token')!;
+    const devBAfter = await app.inject({
+      method: 'GET',
+      url: '/api/me',
+      cookies: { gr_token: claimedCookie.value },
+    });
+    expect(devBAfter.json().id).toBe(userA.id);
+  });
+
   it('POST /api/runs rejects invalid / non-winning replay with 422', async () => {
+
     const res = await app.inject({
       method: 'POST',
       url: '/api/runs',

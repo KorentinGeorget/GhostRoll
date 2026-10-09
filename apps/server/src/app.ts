@@ -2,8 +2,9 @@ import Fastify, { FastifyInstance } from 'fastify';
 import cors from '@fastify/cors';
 import cookie from '@fastify/cookie';
 import crypto from 'node:crypto';
-import { eq, and, sql, asc } from 'drizzle-orm';
-import { DB, getDb, runs, users } from './db/index.js';
+import { eq, and, sql, asc, gt } from 'drizzle-orm';
+import { DB, getDb, runs, users, syncCodes } from './db/index.js';
+
 import { getOrCreateGuestUser } from './services/auth.service.js';
 import { validateReplay } from './services/validation.service.js';
 import { TICKS_PER_SECOND } from '@ghostroll/shared';
@@ -101,6 +102,121 @@ export async function buildApp(opts: AppOptions = {}): Promise<FastifyInstance> 
       createdAt: user.createdAt,
     };
   });
+
+  // Update Display Name
+  app.patch<{
+    Body: { displayName?: string };
+  }>('/api/me', async (request, reply) => {
+    const rawCookie = request.cookies['gr_token'];
+    const { user } = await getOrCreateGuestUser(db, rawCookie);
+
+    const { displayName } = request.body || {};
+    if (!displayName || typeof displayName !== 'string') {
+      return reply.status(400).send({ error: 'INVALID_NAME', message: 'Display name is required' });
+    }
+
+    const trimmed = displayName.trim();
+    if (trimmed.length < 2 || trimmed.length > 24) {
+      return reply.status(400).send({ error: 'INVALID_LENGTH', message: 'Name must be 2-24 characters' });
+    }
+
+    await db.update(users).set({ displayName: trimmed }).where(eq(users.id, user.id));
+
+    return {
+      id: user.id,
+      displayName: trimmed,
+      createdAt: user.createdAt,
+    };
+  });
+
+  // Generate 6-char device sync code (10-minute expiry)
+  app.post('/api/me/sync-code', async (request, reply) => {
+    const rawCookie = request.cookies['gr_token'];
+    const { user } = await getOrCreateGuestUser(db, rawCookie);
+
+    const chars = '23456789ABCDEFGHJKLMNPQRSTUVWXYZ';
+    let code = '';
+    const bytes = crypto.randomBytes(6);
+    for (let i = 0; i < 6; i++) {
+      code += chars[bytes[i] % chars.length];
+    }
+
+    const expiresAt = new Date(Date.now() + 10 * 60 * 1000);
+
+    await db.insert(syncCodes).values({
+      code,
+      userId: user.id,
+      expiresAt,
+    });
+
+    return {
+      code,
+      expiresAt: expiresAt.toISOString(),
+      expiresInSeconds: 600,
+    };
+  });
+
+  // Claim sync code to link account across devices
+  app.post<{
+    Body: { code: string };
+  }>('/api/me/claim-code', async (request, reply) => {
+    const rawCookie = request.cookies['gr_token'];
+    const { user: currentUser } = await getOrCreateGuestUser(db, rawCookie);
+
+    const { code } = request.body || {};
+    if (!code || typeof code !== 'string') {
+      return reply.status(400).send({ error: 'INVALID_CODE', message: 'Code is required' });
+    }
+
+    const formattedCode = code.trim().toUpperCase();
+
+    const existingCodes = await db
+      .select()
+      .from(syncCodes)
+      .where(and(eq(syncCodes.code, formattedCode), gt(syncCodes.expiresAt, new Date())))
+      .limit(1);
+
+    if (existingCodes.length === 0) {
+      return reply.status(404).send({ error: 'CODE_NOT_FOUND', message: 'Invalid or expired sync code' });
+    }
+
+    const activeCode = existingCodes[0];
+
+    if (activeCode.userId === currentUser.id) {
+      return reply.status(400).send({ error: 'SAME_USER', message: 'Sync code belongs to current user' });
+    }
+
+    const targetUsers = await db.select().from(users).where(eq(users.id, activeCode.userId)).limit(1);
+    if (targetUsers.length === 0) {
+      return reply.status(404).send({ error: 'USER_NOT_FOUND' });
+    }
+
+    const targetUser = targetUsers[0];
+
+    // Merge any runs from currentUser into targetUser
+    await db.update(runs).set({ userId: targetUser.id }).where(eq(runs.userId, currentUser.id));
+
+    // Delete used sync code
+    await db.delete(syncCodes).where(eq(syncCodes.code, formattedCode));
+
+    // Sign targetUser token and set cookie
+    reply.setCookie('gr_token', targetUser.guestToken, {
+      path: '/',
+      httpOnly: true,
+      sameSite: 'lax',
+      maxAge: 365 * 24 * 3600,
+    });
+
+    return {
+      success: true,
+      user: {
+        id: targetUser.id,
+        displayName: targetUser.displayName,
+        createdAt: targetUser.createdAt,
+      },
+    };
+  });
+
 
   // Run Submission & Verification
   app.post<{

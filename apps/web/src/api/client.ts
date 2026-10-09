@@ -123,3 +123,49 @@ export async function fetchLevel(levelId: string): Promise<{ level: LevelDefinit
   }
 }
 
+export async function updateDisplayName(displayName: string): Promise<UserProfile | null> {
+  try {
+    const res = await fetch('/api/me', {
+      method: 'PATCH',
+      headers: { 'Content-Type': 'application/json' },
+      credentials: 'include',
+      body: JSON.stringify({ displayName }),
+    });
+    if (!res.ok) return null;
+    return await res.json();
+  } catch (err) {
+    console.warn('Failed to update display name:', err);
+    return null;
+  }
+}
+
+export async function createSyncCode(): Promise<{ code: string; expiresAt: string; expiresInSeconds: number } | null> {
+  try {
+    const res = await fetch('/api/me/sync-code', {
+      method: 'POST',
+      credentials: 'include',
+    });
+    if (!res.ok) return null;
+    return await res.json();
+  } catch (err) {
+    console.warn('Failed to create sync code:', err);
+    return null;
+  }
+}
+
+export async function claimSyncCode(code: string): Promise<{ success: boolean; user?: UserProfile; error?: string }> {
+  try {
+    const res = await fetch('/api/me/claim-code', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      credentials: 'include',
+      body: JSON.stringify({ code }),
+    });
+    const data = await res.json();
+    return data;
+  } catch (err: any) {
+    return { success: false, error: err?.message || 'Network error claiming sync code' };
+  }
+}
+
+

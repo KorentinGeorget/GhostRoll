@@ -1,0 +1,164 @@
+export type Language = 'en' | 'fr';
+
+export const TRANSLATIONS = {
+  en: {
+    // HUD & Header
+    subtitle: 'Daily 3D marble time-trial',
+    track: 'Track',
+    courses: 'Courses',
+    leaderboard: 'Leaderboard',
+    profile: 'Profile',
+    time: 'Time',
+    tiltToStart: 'Tilt with arrows / WASD to start',
+    kmh: 'km/h',
+    tick: 'Tick',
+    stateHash: 'State Hash',
+    ghost: 'Ghost',
+    personalBest: 'Personal Best',
+    noRecordYet: '— No record yet —',
+    resetRun: 'Reset run',
+    controlsHelp: 'to tilt',
+    restartKey: 'Restart',
+
+    // Win Modal
+    newPB: 'NEW PERSONAL BEST!',
+    goalReached: 'GOAL REACHED!',
+    courseCompleted: 'Course completed smoothly.',
+    finalTime: 'Final Time',
+    validatingServer: 'Validating replay on server...',
+    verifiedServer: 'Replay 100% verified by server! Posted to leaderboard.',
+    rejectedServer: 'Server simulation diverged',
+    shareCard: 'Share Result (Wordle Card)',
+    cardCopied: 'Card copied to clipboard!',
+    playAgain: 'Play Again',
+
+    // Loss Modal
+    fellOff: 'Fell off the track!',
+    keepBalance: 'Keep balance on the narrow bridges.',
+    retry: 'Retry',
+
+    // Course Selector Modal
+    courseSelector: 'Course Selector',
+    courseSelectorDesc: "Choose today's procedural track, archived daily courses, or the trial track",
+    todayRace: "Today's Daily Race",
+    activeToday: 'Active Today',
+    pastArchive: 'Past Daily Archive (Last 7 Days)',
+    loadingArchive: 'Loading procedural archive...',
+    baselineTrial: 'Standard Baseline',
+    baselineDesc: 'Hand-crafted 4-pad tutorial track with bumpers & narrow bridges',
+    selected: 'Selected',
+    close: 'Close',
+
+    // Profile & Account Sync Modal
+    profileTitle: 'Player Profile & Device Sync',
+    profileDesc: 'Manage your gamer tag and sync your records across desktop and mobile',
+    displayNameLabel: 'Gamer Tag / Display Name',
+    saveName: 'Save Name',
+    saving: 'Saving...',
+    nameUpdated: 'Name updated successfully!',
+    syncTitle: 'Cross-Device Synchronization',
+    syncDesc: 'Generate a code to transfer your player identity and records to another device without logging into external services.',
+    generateCode: 'Generate Sync Code',
+    codeExpiresIn: 'Code expires in',
+    claimCodeLabel: 'Link From Another Device',
+    claimCodePlaceholder: 'Enter 6-char code (e.g. K9X2P4)',
+    claimButton: 'Link Device',
+    linking: 'Linking...',
+    linkSuccess: 'Device linked successfully! Records merged.',
+    linkError: 'Failed to link device',
+    accountCreated: 'Account created',
+
+    // Gyroscope / Mobile Controls
+    gyroMode: 'Gyroscope Mode',
+    touchMode: 'Touch Joystick Mode',
+    calibrateGyro: 'Calibrate Gyro',
+    gyroCalibrated: 'Gyro calibrated!',
+    enableGyroPrompt: 'Enable motion tilt (Gyroscope)',
+    permissionRequired: 'Device motion permission required',
+  },
+  fr: {
+    // HUD & Header
+    subtitle: 'Course quotidienne de billes 3D',
+    track: 'Piste',
+    courses: 'Pistes',
+    leaderboard: 'Classement',
+    profile: 'Profil',
+    time: 'Chrono',
+    tiltToStart: 'Inclinez avec les flèches / ZQSD pour lancer',
+    kmh: 'km/h',
+    tick: 'Frame',
+    stateHash: 'Hash État',
+    ghost: 'Fantôme',
+    personalBest: 'Record Perso',
+    noRecordYet: '— Aucun record —',
+    resetRun: 'Recommencer',
+    controlsHelp: 'pour incliner',
+    restartKey: 'Recommencer',
+
+    // Win Modal
+    newPB: 'NOUVEAU RECORD PERSONNEL !',
+    goalReached: 'ARRIVÉE ATTEINTE !',
+    courseCompleted: 'Parcours complété sans faute.',
+    finalTime: 'Temps Final',
+    validatingServer: 'Validation déterministe sur le serveur...',
+    verifiedServer: 'Replay 100% validé par le serveur ! Enregistré au classement.',
+    rejectedServer: 'Divergence de simulation rejetée par le serveur',
+    shareCard: 'Partager le score (Carte Wordle)',
+    cardCopied: 'Copié dans le presse-papier !',
+    playAgain: 'Rejouer',
+
+    // Loss Modal
+    fellOff: 'Chute hors de la piste !',
+    keepBalance: 'Gardez l’équilibre sur les ponts étroits.',
+    retry: 'Réessayer',
+
+    // Course Selector Modal
+    courseSelector: 'Sélecteur de Piste',
+    courseSelectorDesc: 'Choisissez le parcours du jour, les archives quotidiennes ou le tracé d’entraînement',
+    todayRace: 'Course du Jour',
+    activeToday: 'Actif Aujourd’hui',
+    pastArchive: 'Archives Quotidiennes (7 derniers jours)',
+    loadingArchive: 'Chargement des archives...',
+    baselineTrial: 'Piste de Référence',
+    baselineDesc: 'Tracé tutoriel avec bumpers et ponts étroits',
+    selected: 'Sélectionné',
+    close: 'Fermer',
+
+    // Profile & Account Sync Modal
+    profileTitle: 'Profil Joueur & Synchronisation',
+    profileDesc: 'Modifiez votre pseudo et synchronisez vos records entre PC et mobile',
+    displayNameLabel: 'Pseudo Joueur / Gamer Tag',
+    saveName: 'Enregistrer',
+    saving: 'Enregistrement...',
+    nameUpdated: 'Pseudo mis à jour !',
+    syncTitle: 'Synchronisation Inter-Appareils',
+    syncDesc: 'Générez un code pour transférer votre session et vos records vers votre smartphone ou tablette sans compte tiers.',
+    generateCode: 'Générer un code de synchro',
+    codeExpiresIn: 'Expire dans',
+    claimCodeLabel: 'Lier depuis un autre appareil',
+    claimCodePlaceholder: 'Entrez le code à 6 caractères',
+    claimButton: 'Lier l’appareil',
+    linking: 'Liaison...',
+    linkSuccess: 'Appareil synchronisé ! Records fusionnés.',
+    linkError: 'Impossible de lier l’appareil',
+    accountCreated: 'Compte créé le',
+
+    // Gyroscope / Mobile Controls
+    gyroMode: 'Mode Gyroscope',
+    touchMode: 'Mode Joystick Tactile',
+    calibrateGyro: 'Calibrer Gyro',
+    gyroCalibrated: 'Gyro calibré !',
+    enableGyroPrompt: 'Activer l’inclinaison par mouvements',
+    permissionRequired: 'Autorisation capteur de mouvement requise',
+  },
+} as const;
+
+export function getInitialLanguage(): Language {
+  if (typeof window === 'undefined') return 'en';
+  const stored = localStorage.getItem('gr_lang') as Language | null;
+  if (stored === 'en' || stored === 'fr') return stored;
+  if (navigator.language && navigator.language.toLowerCase().startsWith('fr')) {
+    return 'fr';
+  }
+  return 'en';
+}

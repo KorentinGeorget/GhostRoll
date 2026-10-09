@@ -21,7 +21,9 @@ import { HUD } from './components/HUD.js';
 import { VirtualJoystick } from './components/VirtualJoystick.js';
 import { LeaderboardModal } from './components/LeaderboardModal.js';
 import { TrackSelectorModal } from './components/TrackSelectorModal.js';
+import { ProfileModal } from './components/ProfileModal.js';
 import { useControls } from './hooks/useControls.js';
+import { Language, getInitialLanguage } from './i18n/translations.js';
 import {
   getStoredPB,
   saveStoredPB,
@@ -53,6 +55,16 @@ export const App: React.FC = () => {
   const [level, setLevel] = useState<LevelDefinition>(LEVEL_1);
   const [palette, setPalette] = useState<LevelPalette>(() => generateDailyPalette('trial01'));
 
+  // Language state (i18n)
+  const [lang, setLang] = useState<Language>(getInitialLanguage());
+
+  const handleLanguageChange = (newLang: Language) => {
+    setLang(newLang);
+    if (typeof window !== 'undefined') {
+      localStorage.setItem('gr_lang', newLang);
+    }
+  };
+
   // Daily info and Archive state
   const [dailyInfo, setDailyInfo] = useState<{ levelId: string; name: string; date: string } | null>(null);
   const [archive, setArchive] = useState<ArchiveItem[]>([]);
@@ -61,6 +73,8 @@ export const App: React.FC = () => {
 
   // User profile & Server sync state
   const [userProfile, setUserProfile] = useState<UserProfile | null>(null);
+  const [isProfileOpen, setIsProfileOpen] = useState(false);
+
   const [leaderboard, setLeaderboard] = useState<LeaderboardEntry[]>([]);
   const [leaderboardLoading, setLeaderboardLoading] = useState(false);
   const [isLeaderboardOpen, setIsLeaderboardOpen] = useState(false);
@@ -82,8 +96,26 @@ export const App: React.FC = () => {
   const [renderVel, setRenderVel] = useState<[number, number, number]>([0, 0, 0]);
   const [ghostRenderPos, setGhostRenderPos] = useState<[number, number, number] | null>(null);
 
-  // Controls hook
-  const { getInput, setVirtualTilt, rawTilt } = useControls();
+  // Controls hook (keyboard, touch joystick & mobile gyroscope)
+  const {
+    getInput,
+    setVirtualTilt,
+    rawTilt,
+    gyroSupported,
+    gyroActive,
+    isCalibrated,
+    enableGyro,
+    disableGyro,
+    calibrateGyro,
+  } = useControls();
+
+  const handleToggleGyro = async () => {
+    if (gyroActive) {
+      disableGyro();
+    } else {
+      await enableGyro();
+    }
+  };
 
   // References for the loop
   const simRef = useRef<Simulation | null>(null);
@@ -111,7 +143,7 @@ export const App: React.FC = () => {
   // Track selection handler
   const handleSelectTrack = useCallback(async (trackId: string) => {
     if (trackId === level.id) return;
-    if (trackId === LEVEL_1.id) {
+    if (trackId === LEVEL_1.id || trackId === 'trial-level-1') {
       setLevel(LEVEL_1);
       setPalette(generateDailyPalette('trial01'));
       return;
@@ -162,7 +194,7 @@ export const App: React.FC = () => {
         });
 
         // If user didn't explicitly request trial track via URL param, default to today's daily
-        if (requestedTrack !== 'trial-level-1') {
+        if (requestedTrack !== 'trial-level-1' && requestedTrack !== LEVEL_1.id) {
           setLevel(dailyData.level);
           setPalette(dailyData.palette);
         }
@@ -399,8 +431,8 @@ export const App: React.FC = () => {
           refreshLeaderboard();
           setIsLeaderboardOpen(true);
         }}
+        onOpenProfile={() => setIsProfileOpen(true)}
         submitStatus={submitStatus}
-
         submitMessage={submitMessage}
         activeGhostName={activeGhostName}
         levelName={level.name}
@@ -408,6 +440,12 @@ export const App: React.FC = () => {
         dateStr={level.id.startsWith('daily-') ? level.id.replace('daily-', '') : dailyInfo?.date}
         onOpenTrackSelector={() => setIsTrackSelectorOpen(true)}
         leaderboardRank={userRank}
+        lang={lang}
+        gyroSupported={gyroSupported}
+        gyroActive={gyroActive}
+        onToggleGyro={handleToggleGyro}
+        onCalibrateGyro={calibrateGyro}
+        isCalibrated={isCalibrated}
       />
 
       {/* Leaderboard Modal */}
@@ -436,10 +474,21 @@ export const App: React.FC = () => {
         archive={archive}
         loading={archiveLoading}
         onSelectLevel={handleSelectTrack}
+        lang={lang}
       />
 
-      {/* Touch Joystick on Mobile */}
-      <VirtualJoystick onTiltChange={setVirtualTilt} />
+      {/* Player Profile & Cross-Device Sync Modal */}
+      <ProfileModal
+        isOpen={isProfileOpen}
+        onClose={() => setIsProfileOpen(false)}
+        userProfile={userProfile}
+        onProfileUpdated={(updated) => setUserProfile(updated)}
+        lang={lang}
+        onLanguageChange={handleLanguageChange}
+      />
+
+      {/* Touch Joystick on Mobile (only if Gyro is not active) */}
+      {!gyroActive && <VirtualJoystick onTiltChange={setVirtualTilt} />}
     </div>
   );
 };

@@ -1,6 +1,7 @@
 import React from 'react';
 import { Calendar, Check, Compass, Sparkles, X } from 'lucide-react';
 import { ArchiveItem } from '../api/client.js';
+import { Language, TRANSLATIONS } from '../i18n/translations.js';
 
 interface TrackSelectorModalProps {
   isOpen: boolean;
@@ -12,6 +13,7 @@ interface TrackSelectorModalProps {
   archive: ArchiveItem[];
   loading: boolean;
   onSelectLevel: (levelId: string) => void;
+  lang?: Language;
 }
 
 export const TrackSelectorModal: React.FC<TrackSelectorModalProps> = ({
@@ -24,7 +26,9 @@ export const TrackSelectorModal: React.FC<TrackSelectorModalProps> = ({
   archive,
   loading,
   onSelectLevel,
+  lang = 'en',
 }) => {
+  const t = TRANSLATIONS[lang];
   if (!isOpen) return null;
 
   return (
@@ -37,10 +41,8 @@ export const TrackSelectorModal: React.FC<TrackSelectorModalProps> = ({
               <Compass className="w-5 h-5" />
             </div>
             <div>
-              <h2 className="text-xl font-bold text-white tracking-wide">Course Selector</h2>
-              <p className="text-xs text-slate-400">
-                Choose today's procedural track, archived daily courses, or the trial track
-              </p>
+              <h2 className="text-xl font-bold text-white tracking-wide">{t.courseSelector}</h2>
+              <p className="text-xs text-slate-400">{t.courseSelectorDesc}</p>
             </div>
           </div>
           <button
@@ -57,8 +59,9 @@ export const TrackSelectorModal: React.FC<TrackSelectorModalProps> = ({
           <div>
             <div className="flex items-center space-x-2 text-xs font-bold uppercase tracking-wider text-amber-300 mb-2">
               <Sparkles className="w-3.5 h-3.5" />
-              <span>Today's Daily Race</span>
+              <span>{t.todayRace}</span>
             </div>
+
             {dailyLevelId && (
               <button
                 onClick={() => {
@@ -81,7 +84,7 @@ export const TrackSelectorModal: React.FC<TrackSelectorModalProps> = ({
                         {dailyName || 'Daily Challenge'}
                       </span>
                       <span className="text-[10px] uppercase font-bold tracking-wider px-2 py-0.5 rounded-full bg-emerald-500/20 text-emerald-300 border border-emerald-500/30">
-                        Active Today
+                        {t.activeToday}
                       </span>
                     </div>
                     <span className="text-xs text-slate-400 font-mono">
@@ -93,7 +96,7 @@ export const TrackSelectorModal: React.FC<TrackSelectorModalProps> = ({
                 {currentLevelId === dailyLevelId && (
                   <div className="flex items-center space-x-1.5 text-xs font-semibold text-indigo-300">
                     <Check className="w-4 h-4 text-emerald-400" />
-                    <span>Selected</span>
+                    <span>{t.selected}</span>
                   </div>
                 )}
               </button>
@@ -104,13 +107,13 @@ export const TrackSelectorModal: React.FC<TrackSelectorModalProps> = ({
           <div>
             <div className="flex items-center space-x-2 text-xs font-bold uppercase tracking-wider text-slate-400 mb-2">
               <Calendar className="w-3.5 h-3.5 text-indigo-400" />
-              <span>Past Daily Archive (Last 7 Days)</span>
+              <span>{t.pastArchive}</span>
             </div>
 
             {loading ? (
               <div className="py-6 flex flex-col items-center justify-center space-y-2 text-slate-400 text-xs">
                 <div className="w-6 h-6 rounded-full border-2 border-indigo-400 border-t-transparent animate-spin" />
-                <span>Loading procedural archive...</span>
+                <span>{t.loadingArchive}</span>
               </div>
             ) : (
               <div className="grid grid-cols-1 md:grid-cols-2 gap-2.5">
@@ -159,7 +162,7 @@ export const TrackSelectorModal: React.FC<TrackSelectorModalProps> = ({
           {/* Trial Track (Baseline benchmark) */}
           <div>
             <div className="flex items-center space-x-2 text-xs font-bold uppercase tracking-wider text-slate-400 mb-2">
-              <span>Standard Baseline</span>
+              <span>{t.baselineTrial}</span>
             </div>
             <button
               onClick={() => {
@@ -167,9 +170,9 @@ export const TrackSelectorModal: React.FC<TrackSelectorModalProps> = ({
                 onClose();
               }}
               className={`w-full text-left p-3.5 rounded-2xl border transition flex items-center justify-between ${
-                currentLevelId === 'trial-level-1'
+                currentLevelId === 'trial-level-1' || currentLevelId === 'daily-2026-10-09-seed01'
                   ? 'bg-indigo-950/70 border-indigo-400/80 shadow'
-                  : 'bg-white/5 hover:bg-white/10 border-white/10'
+                  : 'bg-white/5 hover:bg-white/10 border-white/5'
               }`}
             >
               <div className="flex items-center space-x-3">
@@ -177,15 +180,15 @@ export const TrackSelectorModal: React.FC<TrackSelectorModalProps> = ({
                 <div>
                   <div className="font-bold text-white text-sm">Neon Dawn</div>
                   <p className="text-xs text-slate-400">
-                    Hand-crafted 4-pad tutorial track with bumpers & narrow bridges
+                    {t.baselineDesc}
                   </p>
                 </div>
               </div>
 
-              {currentLevelId === 'trial-level-1' && (
+              {(currentLevelId === 'trial-level-1' || currentLevelId === 'daily-2026-10-09-seed01') && (
                 <div className="flex items-center space-x-1.5 text-xs font-semibold text-indigo-300">
                   <Check className="w-4 h-4 text-emerald-400" />
-                  <span>Selected</span>
+                  <span>{t.selected}</span>
                 </div>
               )}
             </button>
@@ -198,9 +201,10 @@ export const TrackSelectorModal: React.FC<TrackSelectorModalProps> = ({
             onClick={onClose}
             className="px-5 py-2.5 rounded-xl bg-white/10 hover:bg-white/15 text-sm font-semibold text-white transition"
           >
-            Close
+            {t.close}
           </button>
         </div>
+
       </div>
     </div>
   );

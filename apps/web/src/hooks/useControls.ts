@@ -5,17 +5,43 @@ export interface ControlsState {
   getInput: () => InputFrame;
   setVirtualTilt: (x: number, z: number) => void;
   rawTilt: { x: number; z: number };
+  gyroSupported: boolean;
+  gyroActive: boolean;
+  isCalibrated: boolean;
+  enableGyro: () => Promise<boolean>;
+  disableGyro: () => void;
+  calibrateGyro: () => void;
 }
 
 export function useControls(): ControlsState {
   const keysDown = useRef<{ [key: string]: boolean }>({});
   const currentTilt = useRef<{ x: number; z: number }>({ x: 0, z: 0 });
   const virtualTilt = useRef<{ x: number; z: number }>({ x: 0, z: 0 });
+  const gyroTilt = useRef<{ x: number; z: number }>({ x: 0, z: 0 });
+
+  // Gyroscope tracking
+  const [gyroSupported, setGyroSupported] = useState(false);
+  const [gyroActive, setGyroActive] = useState(false);
+  const [isCalibrated, setIsCalibrated] = useState(false);
+  const gyroActiveRef = useRef(false);
+
+  const betaOffset = useRef<number>(45); // Natural reclined reading angle
+  const gammaOffset = useRef<number>(0);
+  const latestBeta = useRef<number>(45);
+  const latestGamma = useRef<number>(0);
+
   const [debugTilt, setDebugTilt] = useState<{ x: number; z: number }>({ x: 0, z: 0 });
 
+  // Detect DeviceOrientation support
+  useEffect(() => {
+    if (typeof window !== 'undefined' && 'DeviceOrientationEvent' in window) {
+      setGyroSupported(true);
+    }
+  }, []);
+
+  // Keyboard listeners
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
-      // Prevent scrolling with arrows/space
       if (['ArrowUp', 'ArrowDown', 'ArrowLeft', 'ArrowRight', ' '].includes(e.key)) {
         e.preventDefault();
       }
@@ -35,6 +61,83 @@ export function useControls(): ControlsState {
     };
   }, []);
 
+  // DeviceOrientation handler
+  const handleOrientation = useCallback((e: DeviceOrientationEvent) => {
+    if (!gyroActiveRef.current) return;
+    if (e.beta === null || e.gamma === null) return;
+
+    latestBeta.current = e.beta;
+    latestGamma.current = e.gamma;
+
+    const relBeta = e.beta - betaOffset.current;
+    const relGamma = e.gamma - gammaOffset.current;
+
+    const deadzone = 1.5;
+    const maxAngle = 25.0;
+
+    let filteredGamma = Math.abs(relGamma) > deadzone ? relGamma : 0;
+    let filteredBeta = Math.abs(relBeta) > deadzone ? relBeta : 0;
+
+    filteredGamma = Math.max(-maxAngle, Math.min(maxAngle, filteredGamma));
+    filteredBeta = Math.max(-maxAngle, Math.min(maxAngle, filteredBeta));
+
+    // Gamma: tilt right -> roll right (+X)
+    // Beta: tilt forward -> roll down track (+Z)
+    const gx = Math.round((filteredGamma / maxAngle) * 127);
+    const gz = Math.round((-filteredBeta / maxAngle) * 127);
+
+    gyroTilt.current = {
+      x: Math.max(-127, Math.min(127, gx)),
+      z: Math.max(-127, Math.min(127, gz)),
+    };
+  }, []);
+
+  // Calibrate Gyro baseline
+  const calibrateGyro = useCallback(() => {
+    betaOffset.current = latestBeta.current;
+    gammaOffset.current = latestGamma.current;
+    setIsCalibrated(true);
+    gyroTilt.current = { x: 0, z: 0 };
+  }, []);
+
+  // Enable Gyro (requests iOS permission if needed)
+  const enableGyro = useCallback(async (): Promise<boolean> => {
+    if (typeof window === 'undefined' || !('DeviceOrientationEvent' in window)) {
+      return false;
+    }
+
+    try {
+      const DOE = window.DeviceOrientationEvent as any;
+      if (typeof DOE.requestPermission === 'function') {
+        const permission = await DOE.requestPermission();
+        if (permission !== 'granted') {
+          return false;
+        }
+      }
+
+      window.addEventListener('deviceorientation', handleOrientation);
+      gyroActiveRef.current = true;
+      setGyroActive(true);
+      // Auto-calibrate baseline on activation
+      calibrateGyro();
+      return true;
+    } catch (err) {
+      console.warn('Failed to enable device orientation:', err);
+      return false;
+    }
+  }, [handleOrientation, calibrateGyro]);
+
+  // Disable Gyro
+  const disableGyro = useCallback(() => {
+    if (typeof window !== 'undefined') {
+      window.removeEventListener('deviceorientation', handleOrientation);
+    }
+    gyroActiveRef.current = false;
+    setGyroActive(false);
+    gyroTilt.current = { x: 0, z: 0 };
+  }, [handleOrientation]);
+
+  // Virtual Joystick input
   const setVirtualTilt = useCallback((x: number, z: number) => {
     virtualTilt.current = {
       x: Math.max(-127, Math.min(127, Math.round(x))),
@@ -42,30 +145,33 @@ export function useControls(): ControlsState {
     };
   }, []);
 
-  // Update loop for smoothing input ramp-up and decay
+  // 60Hz input sampler
   const getInput = useCallback((): InputFrame => {
     let targetX = 0;
     let targetZ = 0;
 
-    const keys = keysDown.current;
-    // Left / Right (Arrow keys or A / D or Q / D)
-    if (keys['ArrowLeft'] || keys['KeyA'] || keys['KeyQ']) targetX -= 127;
-    if (keys['ArrowRight'] || keys['KeyD']) targetX += 127;
+    if (gyroActiveRef.current) {
+      targetX = gyroTilt.current.x;
+      targetZ = gyroTilt.current.z;
+    } else {
+      const keys = keysDown.current;
+      // Left / Right (Arrow keys or A / D or Q / D)
+      if (keys['ArrowLeft'] || keys['KeyA'] || keys['KeyQ']) targetX -= 127;
+      if (keys['ArrowRight'] || keys['KeyD']) targetX += 127;
 
-    // Forward / Backward (Arrow keys or W / S or Z / S)
-    // Up tilts forward (+Z on track slope)
-    if (keys['ArrowUp'] || keys['KeyW'] || keys['KeyZ']) targetZ += 127;
-    // Down tilts backward (-Z)
-    if (keys['ArrowDown'] || keys['KeyS']) targetZ -= 127;
+      // Forward / Backward (Arrow keys or W / S or Z / S)
+      if (keys['ArrowUp'] || keys['KeyW'] || keys['KeyZ']) targetZ += 127;
+      if (keys['ArrowDown'] || keys['KeyS']) targetZ -= 127;
 
-    // Blend virtual joystick if active
-    if (virtualTilt.current.x !== 0 || virtualTilt.current.z !== 0) {
-      targetX = virtualTilt.current.x;
-      targetZ = virtualTilt.current.z;
+      // Blend virtual joystick if active
+      if (virtualTilt.current.x !== 0 || virtualTilt.current.z !== 0) {
+        targetX = virtualTilt.current.x;
+        targetZ = virtualTilt.current.z;
+      }
     }
 
     // Responsive ramp-up/decay (approx 5 frames to reach full tilt)
-    const rampSpeed = 28;
+    const rampSpeed = gyroActiveRef.current ? 40 : 28;
     const current = currentTilt.current;
 
     if (current.x < targetX) {
@@ -100,9 +206,24 @@ export function useControls(): ControlsState {
     return () => clearInterval(interval);
   }, []);
 
+  // Cleanup on unmount
+  useEffect(() => {
+    return () => {
+      if (typeof window !== 'undefined') {
+        window.removeEventListener('deviceorientation', handleOrientation);
+      }
+    };
+  }, [handleOrientation]);
+
   return {
     getInput,
     setVirtualTilt,
     rawTilt: debugTilt,
+    gyroSupported,
+    gyroActive,
+    isCalibrated,
+    enableGyro,
+    disableGyro,
+    calibrateGyro,
   };
 }

@@ -69,6 +69,16 @@ async function initializeTables(db: DB): Promise<void> {
   await db.execute(`
     CREATE INDEX IF NOT EXISTS runs_user_idx ON runs (user_id)
   `);
+
+  await db.execute(`
+    CREATE TABLE IF NOT EXISTS sync_codes (
+      code TEXT PRIMARY KEY,
+      user_id TEXT NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+      expires_at TIMESTAMPTZ NOT NULL,
+      created_at TIMESTAMPTZ DEFAULT NOW() NOT NULL
+    )
+  `);
 }
+
 
 export * from './schema.js';
