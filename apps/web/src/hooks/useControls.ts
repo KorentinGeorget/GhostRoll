@@ -49,6 +49,8 @@ export function useControls(): ControlsState {
         e.preventDefault();
       }
       keysDown.current[e.code] = true;
+      keysDown.current[e.key] = true;
+      keysDown.current[e.key.toLowerCase()] = true;
       if (e.code === 'Space' || e.key === ' ') {
         jumpRequested.current = true;
       }
@@ -56,6 +58,8 @@ export function useControls(): ControlsState {
 
     const handleKeyUp = (e: KeyboardEvent) => {
       keysDown.current[e.code] = false;
+      keysDown.current[e.key] = false;
+      keysDown.current[e.key.toLowerCase()] = false;
     };
 
     window.addEventListener('keydown', handleKeyDown);
@@ -87,9 +91,9 @@ export function useControls(): ControlsState {
     filteredGamma = Math.max(-maxAngle, Math.min(maxAngle, filteredGamma));
     filteredBeta = Math.max(-maxAngle, Math.min(maxAngle, filteredBeta));
 
-    // Gamma: tilt right -> roll right (+X)
-    // Beta: tilt forward -> roll down track (+Z)
-    const gx = Math.round((filteredGamma / maxAngle) * 127);
+    // Gamma: phone tilted right -> roll right on screen (-X in world physics)
+    // Beta: phone tilted forward -> roll down track (+Z in world physics)
+    const gx = Math.round((-filteredGamma / maxAngle) * 127);
     const gz = Math.round((-filteredBeta / maxAngle) * 127);
 
     gyroTilt.current = {
@@ -161,13 +165,20 @@ export function useControls(): ControlsState {
       targetZ = gyroTilt.current.z;
     } else {
       const keys = keysDown.current;
-      // Left / Right (Arrow keys or A / D or Q / D)
-      if (keys['ArrowLeft'] || keys['KeyA'] || keys['KeyQ']) targetX -= 127;
-      if (keys['ArrowRight'] || keys['KeyD']) targetX += 127;
+      // Camera looks down +Z from (-6, 11, -11).
+      // Screen LEFT corresponds to +X in world space.
+      // Screen RIGHT corresponds to -X in world space.
+      const isLeft = !!(keys['ArrowLeft'] || keys['KeyA'] || keys['KeyQ'] || keys['q'] || keys['a']);
+      const isRight = !!(keys['ArrowRight'] || keys['KeyD'] || keys['d']);
+      const isUp = !!(keys['ArrowUp'] || keys['KeyW'] || keys['KeyZ'] || keys['z'] || keys['w']);
+      const isDown = !!(keys['ArrowDown'] || keys['KeyS'] || keys['s']);
 
-      // Forward / Backward (Arrow keys or W / S or Z / S)
-      if (keys['ArrowUp'] || keys['KeyW'] || keys['KeyZ']) targetZ += 127;
-      if (keys['ArrowDown'] || keys['KeyS']) targetZ -= 127;
+      if (isLeft) targetX += 127;
+      if (isRight) targetX -= 127;
+
+      // Forward / Backward
+      if (isUp) targetZ += 127;
+      if (isDown) targetZ -= 127;
 
       // Blend virtual joystick if active
       if (virtualTilt.current.x !== 0 || virtualTilt.current.z !== 0) {

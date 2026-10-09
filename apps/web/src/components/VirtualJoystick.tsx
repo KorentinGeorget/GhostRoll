@@ -40,7 +40,8 @@ export const VirtualJoystick: React.FC<VirtualJoystickProps> = ({ onTiltChange }
     setStickPos({ x: clampedX, y: clampedY });
 
     // Quantize tilt to [-127, 127]
-    const tiltX = Math.round((clampedX / radius) * 127);
+    // Screen RIGHT is -X in world physics, Screen LEFT is +X in world physics
+    const tiltX = Math.round((-clampedX / radius) * 127);
     // Downwards pointer movement (dy > 0) tilts backward (-Z); upwards (dy < 0) tilts forward (+Z)
     const tiltZ = Math.round((-clampedY / radius) * 127);
 
