@@ -1,13 +1,14 @@
 import React, { useRef } from 'react';
 import { Canvas, useFrame } from '@react-three/fiber';
 import * as THREE from 'three';
-import { LevelDefinition } from '@ghostroll/shared';
+import { LevelDefinition, LevelPalette } from '@ghostroll/shared';
 import { BoardMesh } from './BoardMesh.js';
 import { BallMesh } from './BallMesh.js';
 import { GhostMesh } from './GhostMesh.js';
 
 interface CanvasViewProps {
   level: LevelDefinition;
+  palette?: LevelPalette;
   ballPos: [number, number, number];
   ballVel: [number, number, number];
   ghostPos: [number, number, number] | null;
@@ -43,20 +44,25 @@ function CameraRig({ target }: { target: [number, number, number] }) {
 
 export const CanvasView: React.FC<CanvasViewProps> = ({
   level,
+  palette,
   ballPos,
   ballVel,
   ghostPos,
   tilt,
 }) => {
+  const bg = palette?.background || '#090d16';
+  const fogColor = palette?.fog || '#090d16';
+
   return (
     <Canvas
       shadows
       camera={{ position: [-6, 12, -10], fov: 42, near: 0.1, far: 200 }}
       gl={{ antialias: true, alpha: false, powerPreference: 'high-performance' }}
-      style={{ background: '#090d16' }}
+      style={{ background: bg }}
     >
-      <color attach="background" args={['#090d16']} />
-      <fog attach="fog" args={['#090d16', 30, 80]} />
+      <color attach="background" args={[bg]} />
+      <fog attach="fog" args={[fogColor, 30, 80]} />
+
 
       <ambientLight intensity={0.7} />
       <directionalLight
@@ -75,7 +81,8 @@ export const CanvasView: React.FC<CanvasViewProps> = ({
       <directionalLight position={[-15, 10, -10]} intensity={0.4} color="#6366f1" />
 
       {/* Track & props */}
-      <BoardMesh level={level} tilt={tilt} />
+      <BoardMesh level={level} palette={palette} tilt={tilt} />
+
 
       {/* Active player ball */}
       <BallMesh position={ballPos} velocity={ballVel} />

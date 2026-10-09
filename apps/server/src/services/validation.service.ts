@@ -7,6 +7,7 @@ import {
   createSimulation,
   initPhysics,
   LEVEL_1,
+  generateDailyLevel,
 } from '@ghostroll/sim';
 
 export interface ValidationRequest {
@@ -30,8 +31,16 @@ export async function validateReplay(req: ValidationRequest): Promise<Validation
 
   // Resolve level
   let level: LevelDefinition | null = null;
-  if (req.levelId === LEVEL_1.id) {
+  if (req.levelId === LEVEL_1.id || req.levelId === 'trial-level-1') {
     level = LEVEL_1;
+  } else if (req.levelId.startsWith('daily-')) {
+
+    const seed = req.levelId.replace('daily-', '');
+    try {
+      level = generateDailyLevel(seed).level;
+    } catch {
+      level = null;
+    }
   }
 
   if (!level) {

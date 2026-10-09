@@ -5,11 +5,13 @@ import {
   GhostSample,
   InputFrame,
   LevelDefinition,
+  LevelPalette,
   ReplayPayload,
   SimState,
 } from '@ghostroll/shared';
 import {
   createSimulation,
+  generateDailyPalette,
   initPhysics,
   LEVEL_1,
   Simulation,
@@ -18,6 +20,7 @@ import { CanvasView } from './components/CanvasView.js';
 import { HUD } from './components/HUD.js';
 import { VirtualJoystick } from './components/VirtualJoystick.js';
 import { LeaderboardModal } from './components/LeaderboardModal.js';
+import { TrackSelectorModal } from './components/TrackSelectorModal.js';
 import { useControls } from './hooks/useControls.js';
 import {
   getStoredPB,
@@ -28,9 +31,13 @@ import {
 import {
   fetchMe,
   fetchLeaderboard,
+  fetchDailyLevel,
+  fetchArchive,
+  fetchLevel,
   submitRun,
   UserProfile,
   LeaderboardEntry,
+  ArchiveItem,
 } from './api/client.js';
 
 if (typeof window !== 'undefined') {
@@ -43,7 +50,14 @@ if (typeof window !== 'undefined') {
 
 export const App: React.FC = () => {
   const [physicsReady, setPhysicsReady] = useState(false);
-  const [level] = useState<LevelDefinition>(LEVEL_1);
+  const [level, setLevel] = useState<LevelDefinition>(LEVEL_1);
+  const [palette, setPalette] = useState<LevelPalette>(() => generateDailyPalette('trial01'));
+
+  // Daily info and Archive state
+  const [dailyInfo, setDailyInfo] = useState<{ levelId: string; name: string; date: string } | null>(null);
+  const [archive, setArchive] = useState<ArchiveItem[]>([]);
+  const [archiveLoading, setArchiveLoading] = useState(false);
+  const [isTrackSelectorOpen, setIsTrackSelectorOpen] = useState(false);
 
   // User profile & Server sync state
   const [userProfile, setUserProfile] = useState<UserProfile | null>(null);
@@ -77,52 +91,6 @@ export const App: React.FC = () => {
   const recordedSamples = useRef<GhostSample[]>([]);
   const hasWonRef = useRef(false);
 
-  // Load User & Leaderboard from Backend
-  const refreshLeaderboard = useCallback(async () => {
-    setLeaderboardLoading(true);
-    const data = await fetchLeaderboard(level.id);
-    if (data) {
-      setLeaderboard(data.leaderboard);
-      // If we don't have a PB yet but there's a World Record ghost, auto-target it!
-      if (data.leaderboard.length > 0 && data.leaderboard[0].ghostSamples) {
-        if (!getStoredPB(level.id)) {
-          setSelectedLeaderboardGhost(data.leaderboard[0]);
-          setActiveGhostSource('leaderboard');
-        }
-      }
-    }
-    setLeaderboardLoading(false);
-  }, [level.id]);
-
-  useEffect(() => {
-    fetchMe().then((profile) => {
-      if (profile) setUserProfile(profile);
-    });
-    refreshLeaderboard();
-  }, [refreshLeaderboard]);
-
-  // Initialize Physics & Load Local PB
-  useEffect(() => {
-    let mounted = true;
-    initPhysics().then(() => {
-      if (!mounted) return;
-      const sim = createSimulation(level);
-      simRef.current = sim;
-      setSimState(sim.getState());
-      setRenderPos(sim.getState().ball.position);
-      setRenderVel(sim.getState().ball.velocity);
-      setPhysicsReady(true);
-    });
-
-    const pb = getStoredPB(level.id);
-    setPersonalBest(pb);
-
-    return () => {
-      mounted = false;
-      simRef.current?.destroy();
-    };
-  }, [level]);
-
   // Restart function
   const handleRestart = useCallback(() => {
     if (!simRef.current) return;
@@ -139,6 +107,99 @@ export const App: React.FC = () => {
     setRenderVel(initial.ball.velocity);
     setGhostRenderPos(null);
   }, []);
+
+  // Track selection handler
+  const handleSelectTrack = useCallback(async (trackId: string) => {
+    if (trackId === level.id) return;
+    if (trackId === LEVEL_1.id) {
+      setLevel(LEVEL_1);
+      setPalette(generateDailyPalette('trial01'));
+      return;
+    }
+    const data = await fetchLevel(trackId);
+    if (data) {
+      setLevel(data.level);
+      setPalette(data.palette);
+    }
+  }, [level.id]);
+
+  // Load User & Leaderboard from Backend
+  const refreshLeaderboard = useCallback(async () => {
+    setLeaderboardLoading(true);
+    const data = await fetchLeaderboard(level.id);
+    if (data) {
+      setLeaderboard(data.leaderboard);
+      // Auto-target world record ghost if player has no local PB
+      if (data.leaderboard.length > 0 && data.leaderboard[0].ghostSamples) {
+        if (!getStoredPB(level.id)) {
+          setSelectedLeaderboardGhost(data.leaderboard[0]);
+          setActiveGhostSource('leaderboard');
+        }
+      }
+    }
+    setLeaderboardLoading(false);
+  }, [level.id]);
+
+  // Initial user fetch & daily/archive loading
+  useEffect(() => {
+    fetchMe().then((profile) => {
+      if (profile) setUserProfile(profile);
+    });
+
+    const urlParams = typeof window !== 'undefined' ? new URLSearchParams(window.location.search) : null;
+    const requestedTrack = urlParams?.get('track') || urlParams?.get('level');
+
+    setArchiveLoading(true);
+    Promise.all([fetchDailyLevel(), fetchArchive()]).then(([dailyData, archiveData]) => {
+      if (archiveData) {
+        setArchive(archiveData.archive);
+      }
+      if (dailyData) {
+        setDailyInfo({
+          levelId: dailyData.level.id,
+          name: dailyData.level.name,
+          date: dailyData.date,
+        });
+
+        // If user didn't explicitly request trial track via URL param, default to today's daily
+        if (requestedTrack !== 'trial-level-1') {
+          setLevel(dailyData.level);
+          setPalette(dailyData.palette);
+        }
+      }
+      setArchiveLoading(false);
+    });
+  }, []);
+
+  // Refresh leaderboard whenever level changes
+  useEffect(() => {
+    refreshLeaderboard();
+  }, [refreshLeaderboard]);
+
+  // Initialize Physics & Load Local PB whenever level changes
+  useEffect(() => {
+    let mounted = true;
+    initPhysics().then(() => {
+      if (!mounted) return;
+      const sim = createSimulation(level);
+      simRef.current = sim;
+      setSimState(sim.getState());
+      setRenderPos(sim.getState().ball.position);
+      setRenderVel(sim.getState().ball.velocity);
+      setPhysicsReady(true);
+      handleRestart();
+    });
+
+    const pb = getStoredPB(level.id);
+    setPersonalBest(pb);
+    setSelectedLeaderboardGhost(null);
+    setActiveGhostSource('pb');
+
+    return () => {
+      mounted = false;
+      simRef.current?.destroy();
+    };
+  }, [level, handleRestart]);
 
   // Keyboard shortcut 'R' for restart
   useEffect(() => {
@@ -308,11 +369,14 @@ export const App: React.FC = () => {
       ? `#${selectedLeaderboardGhost.rank} ${selectedLeaderboardGhost.displayName}`
       : 'Personal Best';
 
+  const userRank = leaderboard.find((e) => e.displayName === userProfile?.displayName)?.rank;
+
   return (
     <div className="relative w-full h-full select-none overflow-hidden">
       {/* 3D Scene View */}
       <CanvasView
         level={level}
+        palette={palette}
         ballPos={renderPos}
         ballVel={renderVel}
         ghostPos={ghostRenderPos}
@@ -331,10 +395,19 @@ export const App: React.FC = () => {
         onRestart={handleRestart}
         isNewPB={isNewPB}
         userDisplayName={userProfile?.displayName}
-        onOpenLeaderboard={() => setIsLeaderboardOpen(true)}
+        onOpenLeaderboard={() => {
+          refreshLeaderboard();
+          setIsLeaderboardOpen(true);
+        }}
         submitStatus={submitStatus}
+
         submitMessage={submitMessage}
         activeGhostName={activeGhostName}
+        levelName={level.name}
+        levelId={level.id}
+        dateStr={level.id.startsWith('daily-') ? level.id.replace('daily-', '') : dailyInfo?.date}
+        onOpenTrackSelector={() => setIsTrackSelectorOpen(true)}
+        leaderboardRank={userRank}
       />
 
       {/* Leaderboard Modal */}
@@ -350,6 +423,19 @@ export const App: React.FC = () => {
           setIsLeaderboardOpen(false);
           handleRestart();
         }}
+      />
+
+      {/* Track / Course Selector Modal */}
+      <TrackSelectorModal
+        isOpen={isTrackSelectorOpen}
+        onClose={() => setIsTrackSelectorOpen(false)}
+        currentLevelId={level.id}
+        dailyLevelId={dailyInfo?.levelId}
+        dailyName={dailyInfo?.name}
+        dailyDate={dailyInfo?.date}
+        archive={archive}
+        loading={archiveLoading}
+        onSelectLevel={handleSelectTrack}
       />
 
       {/* Touch Joystick on Mobile */}

@@ -7,6 +7,7 @@ import { DB, getDb, runs, users } from './db/index.js';
 import { getOrCreateGuestUser } from './services/auth.service.js';
 import { validateReplay } from './services/validation.service.js';
 import { TICKS_PER_SECOND } from '@ghostroll/shared';
+import { LEVEL_1, generateDailyLevel, generateDailyPalette } from '@ghostroll/sim';
 
 export interface AppOptions {
   db?: DB;
@@ -37,6 +38,47 @@ export async function buildApp(opts: AppOptions = {}): Promise<FastifyInstance> 
   // Health check
   app.get('/health', async () => {
     return { status: 'ok', timestamp: new Date().toISOString() };
+  });
+
+  // Daily level
+  app.get('/api/levels/daily', async () => {
+    const today = new Date().toISOString().slice(0, 10);
+    const { level, palette } = generateDailyLevel(today);
+    return { date: today, level, palette };
+  });
+
+  // Daily archive (past 7 days)
+  app.get('/api/levels/archive', async () => {
+    const archive = [];
+    const now = new Date();
+    for (let i = 0; i < 7; i++) {
+      const d = new Date(now.getTime() - i * 86400000);
+      const dateStr = d.toISOString().slice(0, 10);
+      const { level, palette } = generateDailyLevel(dateStr);
+      archive.push({
+        date: dateStr,
+        levelId: level.id,
+        name: level.name,
+        palette,
+      });
+    }
+    return { archive };
+  });
+
+  // Level definition by ID
+  app.get<{
+    Params: { levelId: string };
+  }>('/api/levels/:levelId', async (request, reply) => {
+    const { levelId } = request.params;
+    if (levelId === LEVEL_1.id || levelId === 'trial-level-1') {
+      return { level: LEVEL_1, palette: generateDailyPalette('trial01') };
+    }
+
+    if (levelId.startsWith('daily-')) {
+      const seed = levelId.replace('daily-', '');
+      return generateDailyLevel(seed);
+    }
+    return reply.status(404).send({ error: 'LEVEL_NOT_FOUND' });
   });
 
   // Auth / Current user
@@ -88,15 +130,21 @@ export async function buildApp(opts: AppOptions = {}): Promise<FastifyInstance> 
     }
 
     const runId = crypto.randomUUID();
+    const claimedTicks = body.claimedTicks ?? (body as any).tickCount;
+
+    if (claimedTicks === undefined) {
+      return reply.status(400).send({ error: 'MISSING_TICKS' });
+    }
 
     // Perform deterministic re-simulation on the server
     const validation = await validateReplay({
       levelId: body.levelId,
       simVersion: body.simVersion,
-      claimedTicks: body.claimedTicks,
+      claimedTicks,
       finalHash: body.finalHash,
       inputs: body.inputs,
     });
+
 
     if (!validation.verified) {
       // Record rejected run for audit / anti-cheat telemetry
@@ -107,7 +155,7 @@ export async function buildApp(opts: AppOptions = {}): Promise<FastifyInstance> 
         simVersion: body.simVersion,
         status: 'rejected',
         rejectionReason: validation.rejectionReason,
-        claimedTicks: body.claimedTicks,
+        claimedTicks: claimedTicks,
         finalHash: body.finalHash,
         inputs: JSON.stringify(body.inputs),
       });
@@ -126,12 +174,13 @@ export async function buildApp(opts: AppOptions = {}): Promise<FastifyInstance> 
       levelId: body.levelId,
       simVersion: body.simVersion,
       status: 'verified',
-      claimedTicks: body.claimedTicks,
+      claimedTicks: claimedTicks,
       verifiedTicks: validation.verifiedTicks,
       finalHash: validation.finalHash!,
       inputs: JSON.stringify(body.inputs),
       ghostSamples: JSON.stringify(validation.ghostSamples),
     });
+
 
     return reply.status(200).send({
       success: true,

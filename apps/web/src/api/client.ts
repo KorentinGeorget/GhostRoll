@@ -1,4 +1,4 @@
-import { GhostSample, ReplayPayload } from '@ghostroll/shared';
+import { GhostSample, LevelDefinition, LevelPalette, ReplayPayload } from '@ghostroll/shared';
 
 export interface UserProfile {
   id: string;
@@ -72,3 +72,54 @@ export async function fetchLeaderboard(levelId: string): Promise<LeaderboardResp
     return null;
   }
 }
+
+export interface DailyLevelResponse {
+  date: string;
+  level: LevelDefinition;
+  palette: LevelPalette;
+}
+
+export interface ArchiveItem {
+  date: string;
+  levelId: string;
+  name: string;
+  palette: LevelPalette;
+}
+
+export interface ArchiveResponse {
+  archive: ArchiveItem[];
+}
+
+export async function fetchDailyLevel(): Promise<DailyLevelResponse | null> {
+  try {
+    const res = await fetch('/api/levels/daily', { credentials: 'include' });
+    if (!res.ok) return null;
+    return await res.json();
+  } catch (err) {
+    console.warn('Failed to fetch daily level:', err);
+    return null;
+  }
+}
+
+export async function fetchArchive(): Promise<ArchiveResponse | null> {
+  try {
+    const res = await fetch('/api/levels/archive', { credentials: 'include' });
+    if (!res.ok) return null;
+    return await res.json();
+  } catch (err) {
+    console.warn('Failed to fetch archive:', err);
+    return null;
+  }
+}
+
+export async function fetchLevel(levelId: string): Promise<{ level: LevelDefinition; palette: LevelPalette } | null> {
+  try {
+    const res = await fetch(`/api/levels/${levelId}`, { credentials: 'include' });
+    if (!res.ok) return null;
+    return await res.json();
+  } catch (err) {
+    console.warn('Failed to fetch level definition:', err);
+    return null;
+  }
+}
+

@@ -64,6 +64,18 @@ export interface TileVisual {
   color?: string;
 }
 
+export interface LevelPalette {
+  name: string;
+  background: string;
+  fog: string;
+  trackPrimary: string;
+  trackSecondary: string;
+  bridge: string;
+  bumper: string;
+  goal: string;
+}
+
+
 export interface LevelDefinition {
   id: string;
   name: string;

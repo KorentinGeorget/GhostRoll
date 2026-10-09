@@ -133,4 +133,32 @@ describe('Server API & Replay Verification Pipeline', () => {
     expect(topRun.ghostSamples).toBeInstanceOf(Array);
     expect(topRun.ghostSamples.length).toBeGreaterThan(10);
   });
+
+  it('GET /api/levels/daily returns today procedural level and palette', async () => {
+    const res = await app.inject({
+      method: 'GET',
+      url: '/api/levels/daily',
+    });
+
+    expect(res.statusCode).toBe(200);
+    const body = res.json();
+    expect(body.date).toBeDefined();
+    expect(body.level.id).toBe(`daily-${body.date}`);
+    expect(body.level.colliders.length).toBeGreaterThan(5);
+    expect(body.palette.name).toBeDefined();
+    expect(body.palette.trackPrimary).toMatch(/^#[0-9a-f]{6}$/i);
+  });
+
+  it('GET /api/levels/archive returns past 7 daily tracks', async () => {
+    const res = await app.inject({
+      method: 'GET',
+      url: '/api/levels/archive',
+    });
+
+    expect(res.statusCode).toBe(200);
+    const body = res.json();
+    expect(body.archive).toBeInstanceOf(Array);
+    expect(body.archive.length).toBe(7);
+    expect(body.archive[0].levelId).toMatch(/^daily-[0-9]{4}-[0-9]{2}-[0-9]{2}$/);
+  });
 });

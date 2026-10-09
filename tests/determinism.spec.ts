@@ -19,7 +19,7 @@ test.describe('Cross-Browser Determinism Invariant', () => {
   const winFixture: WinRunFixture = JSON.parse(fs.readFileSync(fixturePath, 'utf-8'));
 
   test('executes simulation inside browser engine and matches Node golden hash bit-for-bit', async ({ page }) => {
-    await page.goto('/');
+    await page.goto('/?track=trial-level-1');
 
     // Wait until simulation engine is mounted and loaded on window
     await page.waitForFunction(() => !!(window as any).__GHOSTROLL_SIM__);
@@ -56,11 +56,48 @@ test.describe('Cross-Browser Determinism Invariant', () => {
     const title = await page.locator('h1').textContent();
     expect(title).toContain('GHOSTROLL');
 
+    // Submit golden replay to backend from browser
+    const submitResult = await page.evaluate(async (fixture) => {
+      const res = await fetch('/api/runs', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        credentials: 'include',
+        body: JSON.stringify({
+          magic: 'GRRP',
+          formatVersion: 1,
+          simVersion: fixture.simVersion,
+          levelId: fixture.levelId,
+          tickCount: fixture.claimedTicks,
+          finalHash: fixture.finalHash,
+          inputs: fixture.inputs,
+        }),
+      });
+      return await res.json();
+    }, winFixture);
+
+    expect(submitResult.success).toBe(true);
+    expect(submitResult.finalHash).toBe(winFixture.finalHash);
+
     // Verify Leaderboard button is clickable and opens modal
     await page.click('button:has-text("Leaderboard")');
     await expect(page.locator('text=Global Leaderboard')).toBeVisible();
 
     // Verify verified badge is present in leaderboard
-    await expect(page.locator('text=Hash b72cbd05')).toBeVisible();
+    await expect(page.locator('text=Hash b72cbd05').first()).toBeVisible();
+  });
+
+
+  test('loads procedural daily track by default and opens course selector', async ({ page }) => {
+    await page.goto('/');
+
+    // Wait until simulation engine is loaded
+    await page.waitForFunction(() => !!(window as any).__GHOSTROLL_SIM__);
+
+    // Verify course selector opens
+    await page.click('button:has-text("Courses")');
+    await expect(page.locator('text=Course Selector')).toBeVisible();
+    await expect(page.locator("text=Today's Daily Race")).toBeVisible();
+    await expect(page.locator('text=Neon Dawn')).toBeVisible();
   });
 });
+

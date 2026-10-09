@@ -1,7 +1,21 @@
-import React from 'react';
-import { SimStatus, TICKS_PER_SECOND } from '@ghostroll/shared';
+import React, { useState } from 'react';
+import { FIXED_DT, formatShareCard, SimStatus, TICKS_PER_SECOND } from '@ghostroll/shared';
 import { StoredPB } from '../utils/ghostStorage.js';
-import { RotateCcw, Trophy, Eye, EyeOff, Hash, Zap, CheckCircle2, AlertTriangle, User as UserIcon } from 'lucide-react';
+import {
+  RotateCcw,
+  Trophy,
+  Eye,
+  EyeOff,
+  Hash,
+  Zap,
+  CheckCircle2,
+  AlertTriangle,
+  User as UserIcon,
+  Compass,
+  ChevronDown,
+  Share2,
+  Check,
+} from 'lucide-react';
 
 interface HUDProps {
   status: SimStatus;
@@ -18,7 +32,13 @@ interface HUDProps {
   submitStatus?: 'idle' | 'submitting' | 'verified' | 'rejected';
   submitMessage?: string;
   activeGhostName?: string;
+  levelName: string;
+  levelId: string;
+  dateStr?: string;
+  onOpenTrackSelector: () => void;
+  leaderboardRank?: number;
 }
+
 
 function formatTime(ticks: number): string {
   const totalSeconds = ticks / TICKS_PER_SECOND;
@@ -43,12 +63,38 @@ export const HUD: React.FC<HUDProps> = ({
   submitStatus = 'idle',
   submitMessage,
   activeGhostName = 'Personal Best',
+  levelName,
+  levelId: _levelId,
+  dateStr,
+  onOpenTrackSelector,
+  leaderboardRank,
 }) => {
+  const [copiedShare, setCopiedShare] = useState(false);
+
+  const handleShare = () => {
+    const shareText = formatShareCard({
+      levelName,
+      date: dateStr || new Date().toISOString().slice(0, 10),
+      ticks: tick,
+      timeSeconds: tick * FIXED_DT,
+      rank: leaderboardRank,
+      finalHash: stateHash,
+      url: window.location.origin,
+    });
+
+    if (navigator.clipboard) {
+      navigator.clipboard.writeText(shareText).then(() => {
+        setCopiedShare(true);
+        setTimeout(() => setCopiedShare(false), 3000);
+      });
+    }
+  };
+
   return (
     <div className="absolute inset-0 pointer-events-none flex flex-col justify-between p-4 md:p-6">
       {/* Top Header */}
       <div className="flex items-start justify-between">
-        {/* Game Title, User Profile & Leaderboard trigger */}
+        {/* Game Title, Track & User Profile */}
         <div className="flex flex-col space-y-2 pointer-events-auto">
           <div className="glass-panel rounded-2xl px-5 py-3 flex items-center space-x-4">
             <div>
@@ -57,14 +103,20 @@ export const HUD: React.FC<HUDProps> = ({
                   GHOSTROLL
                 </h1>
                 <span className="text-[10px] uppercase font-bold tracking-widest px-2 py-0.5 rounded-full bg-emerald-500/20 text-emerald-300 border border-emerald-500/30">
-                  v0.2
+                  v0.3
                 </span>
               </div>
-              <p className="text-xs text-slate-400 font-medium">Trial Track: Neon Dawn</p>
+              <button
+                onClick={onOpenTrackSelector}
+                className="text-xs text-slate-300 font-medium flex items-center space-x-1.5 hover:text-white transition group mt-0.5"
+              >
+                <span>Track: {levelName}</span>
+                <ChevronDown className="w-3.5 h-3.5 text-indigo-400 group-hover:translate-y-0.5 transition-transform" />
+              </button>
             </div>
           </div>
 
-          {/* User profile & Leaderboard Button */}
+          {/* User profile, Course Selector & Leaderboard Button */}
           <div className="flex items-center space-x-2">
             {userDisplayName && (
               <div className="glass-pill rounded-xl px-3 py-1.5 flex items-center space-x-1.5 text-xs text-slate-300">
@@ -72,6 +124,13 @@ export const HUD: React.FC<HUDProps> = ({
                 <span className="font-semibold">{userDisplayName}</span>
               </div>
             )}
+            <button
+              onClick={onOpenTrackSelector}
+              className="glass-pill rounded-xl px-3.5 py-1.5 flex items-center space-x-1.5 text-xs font-semibold text-sky-300 hover:bg-white/10 transition shadow"
+            >
+              <Compass className="w-3.5 h-3.5" />
+              <span>Courses</span>
+            </button>
             <button
               onClick={onOpenLeaderboard}
               className="glass-pill rounded-xl px-3.5 py-1.5 flex items-center space-x-1.5 text-xs font-semibold text-amber-300 hover:bg-white/10 transition shadow"
@@ -81,6 +140,7 @@ export const HUD: React.FC<HUDProps> = ({
             </button>
           </div>
         </div>
+
 
         {/* Live Timer */}
         <div className="glass-panel rounded-2xl px-6 py-3 flex flex-col items-center">
@@ -186,7 +246,26 @@ export const HUD: React.FC<HUDProps> = ({
             )}
           </div>
 
+          {/* Share Result Button */}
+          <button
+            onClick={handleShare}
+            className="w-full mb-3 py-3 px-4 rounded-xl bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-500 hover:to-purple-500 font-bold text-white shadow-lg transition flex items-center justify-center space-x-2 border border-indigo-400/30"
+          >
+            {copiedShare ? (
+              <>
+                <Check className="w-4 h-4 text-emerald-300" />
+                <span className="text-emerald-200">Card copied to clipboard!</span>
+              </>
+            ) : (
+              <>
+                <Share2 className="w-4 h-4 text-indigo-200" />
+                <span>Share Result (Wordle Card)</span>
+              </>
+            )}
+          </button>
+
           <div className="flex space-x-3">
+
             <button
               onClick={onOpenLeaderboard}
               className="flex-1 py-3 px-4 rounded-xl bg-white/10 hover:bg-white/15 font-semibold text-white transition flex items-center justify-center space-x-2"

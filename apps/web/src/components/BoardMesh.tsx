@@ -1,14 +1,15 @@
 import React, { useRef } from 'react';
 import * as THREE from 'three';
 import { useFrame } from '@react-three/fiber';
-import { LevelDefinition } from '@ghostroll/shared';
+import { LevelDefinition, LevelPalette } from '@ghostroll/shared';
 
 interface BoardMeshProps {
   level: LevelDefinition;
+  palette?: LevelPalette;
   tilt: { x: number; z: number };
 }
 
-export const BoardMesh: React.FC<BoardMeshProps> = ({ level, tilt }) => {
+export const BoardMesh: React.FC<BoardMeshProps> = ({ level, palette, tilt }) => {
   const groupRef = useRef<THREE.Group>(null);
   const goalRingRef = useRef<THREE.Mesh>(null);
 
@@ -42,6 +43,7 @@ export const BoardMesh: React.FC<BoardMeshProps> = ({ level, tilt }) => {
       {/* Visual Level Tiles */}
       {level.visuals.map((vis) => {
         if (vis.type === 'bumper') {
+          const bumperColor = vis.color || palette?.bumper || '#ec4899';
           return (
             <mesh
               key={vis.id}
@@ -51,8 +53,8 @@ export const BoardMesh: React.FC<BoardMeshProps> = ({ level, tilt }) => {
             >
               <cylinderGeometry args={[0.5, 0.5, 0.6, 24]} />
               <meshStandardMaterial
-                color={vis.color || '#ec4899'}
-                emissive={vis.color || '#ec4899'}
+                color={bumperColor}
+                emissive={bumperColor}
                 emissiveIntensity={0.6}
                 roughness={0.2}
                 metalness={0.8}
@@ -62,6 +64,7 @@ export const BoardMesh: React.FC<BoardMeshProps> = ({ level, tilt }) => {
         }
 
         if (vis.type === 'goal') {
+          const goalColor = palette?.goal || '#10b981';
           return (
             <group key={vis.id} position={vis.position}>
               {/* Base platform */}
@@ -74,8 +77,8 @@ export const BoardMesh: React.FC<BoardMeshProps> = ({ level, tilt }) => {
               <mesh position={[0, 0.28, 0]} rotation={[-Math.PI / 2, 0, 0]} receiveShadow>
                 <circleGeometry args={[level.goal.radius, 32]} />
                 <meshStandardMaterial
-                  color="#10b981"
-                  emissive="#10b981"
+                  color={goalColor}
+                  emissive={goalColor}
                   emissiveIntensity={0.8}
                   transparent
                   opacity={0.85}
@@ -86,8 +89,8 @@ export const BoardMesh: React.FC<BoardMeshProps> = ({ level, tilt }) => {
               <mesh ref={goalRingRef} position={[0, 1.2, 0]} rotation={[-Math.PI / 2, 0, 0]}>
                 <torusGeometry args={[level.goal.radius * 0.85, 0.08, 16, 48]} />
                 <meshStandardMaterial
-                  color="#34d399"
-                  emissive="#34d399"
+                  color={goalColor}
+                  emissive={goalColor}
                   emissiveIntensity={1.2}
                 />
               </mesh>
@@ -97,7 +100,9 @@ export const BoardMesh: React.FC<BoardMeshProps> = ({ level, tilt }) => {
 
         // Standard track tiles (pads, straightaways, ramps, bridges)
         const isBridge = vis.id.includes('bridge');
-        const tileColor = isBridge ? '#d97706' : (vis.color || '#4338ca');
+        const tileColor =
+          vis.color ||
+          (isBridge ? palette?.bridge || '#d97706' : palette?.trackPrimary || '#4338ca');
 
         return (
           <mesh
@@ -119,8 +124,9 @@ export const BoardMesh: React.FC<BoardMeshProps> = ({ level, tilt }) => {
       {/* Decorative track edge guides / rails */}
       <mesh position={[0, 0.9, 0]} receiveShadow>
         <boxGeometry args={[5.2, 0.1, 5.2]} />
-        <meshStandardMaterial color="#312e81" roughness={0.6} />
+        <meshStandardMaterial color={palette?.trackSecondary || '#312e81'} roughness={0.6} />
       </mesh>
+
     </group>
   );
 };
