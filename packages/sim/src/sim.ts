@@ -145,14 +145,14 @@ export function createSimulation(level: LevelDefinition): Simulation {
       if (input.jump) {
         const curPos = ballBody.translation();
         const curVel = ballBody.linvel();
-        if (curVel.y < 2.0) {
+        if (curVel.y < 2.5) {
           const ray = new RAPIER.Ray(
             { x: curPos.x, y: curPos.y - (BALL_RADIUS + 0.01), z: curPos.z },
             { x: 0.0, y: -1.0, z: 0.0 }
           );
-          const hit = world.castRay(ray, 0.15, true);
+          const hit = world.castRay(ray, 0.28, true);
           if (hit !== null) {
-            ballBody.applyImpulse({ x: 0.0, y: 5.5, z: 0.0 }, true);
+            ballBody.applyImpulse({ x: 0.0, y: 5.8, z: 0.0 }, true);
           }
         }
       }
