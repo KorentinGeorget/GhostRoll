@@ -5,7 +5,7 @@ import crypto from 'node:crypto';
 import { eq, and, sql, asc, gt } from 'drizzle-orm';
 import { DB, getDb, runs, users, syncCodes } from './db/index.js';
 
-import { getOrCreateGuestUser } from './services/auth.service.js';
+import { getOrCreateGuestUser, linkGoogleAccount } from './services/auth.service.js';
 import { validateReplay } from './services/validation.service.js';
 import { TICKS_PER_SECOND } from '@ghostroll/shared';
 import { LEVEL_1, generateDailyLevel, generateDailyPalette } from '@ghostroll/sim';
@@ -100,6 +100,197 @@ export async function buildApp(opts: AppOptions = {}): Promise<FastifyInstance> 
       id: user.id,
       displayName: user.displayName,
       createdAt: user.createdAt,
+      email: user.email,
+      avatarUrl: user.avatarUrl,
+      isGoogleLinked: !!user.googleId,
+    };
+  });
+
+  // Google OAuth URL resolution
+  app.get('/api/auth/google/url', async (request) => {
+    const clientId = process.env.GOOGLE_CLIENT_ID;
+    const host = request.headers.host || 'localhost:3001';
+    const protocol = request.headers['x-forwarded-proto'] || 'http';
+    const redirectUri = `${protocol}://${host}/api/auth/google/callback`;
+
+    if (!clientId) {
+      // Demo fallback: enables testing in sandbox / local / portfolio environments
+      return {
+        configured: false,
+        url: `/api/auth/google/callback?demo=true`,
+      };
+    }
+
+    const authUrl = `https://accounts.google.com/o/oauth2/v2/auth?client_id=${encodeURIComponent(
+      clientId
+    )}&redirect_uri=${encodeURIComponent(
+      redirectUri
+    )}&response_type=code&scope=openid%20email%20profile&access_type=offline&prompt=consent`;
+
+    return {
+      configured: true,
+      url: authUrl,
+    };
+  });
+
+  // Google OAuth Callback
+  app.get<{
+    Querystring: { code?: string; demo?: string; error?: string };
+  }>('/api/auth/google/callback', async (request, reply) => {
+    const { code, demo, error } = request.query;
+    if (error) {
+      return reply.redirect('/?auth=error&message=' + encodeURIComponent(error));
+    }
+
+    const rawCookie = request.cookies['gr_token'];
+    const { user: currentUser } = await getOrCreateGuestUser(db, rawCookie);
+
+    let googleProfile: { googleId: string; email: string; displayName?: string; avatarUrl?: string };
+
+    if (demo === 'true' || !process.env.GOOGLE_CLIENT_ID) {
+      // Demo profile based on guest user
+      const cleanName = currentUser.displayName.replace(/[^a-zA-Z0-9]/g, '').toLowerCase();
+      googleProfile = {
+        googleId: 'demo-google-' + currentUser.id.slice(0, 12),
+        email: `${cleanName || 'player'}@gmail.com`,
+        displayName: currentUser.displayName,
+        avatarUrl: `https://api.dicebear.com/7.x/bottts/svg?seed=${currentUser.id}`,
+      };
+    } else {
+      if (!code) {
+        return reply.redirect('/?auth=error&message=No+code+provided');
+      }
+
+      const host = request.headers.host || 'localhost:3001';
+      const protocol = request.headers['x-forwarded-proto'] || 'http';
+      const redirectUri = `${protocol}://${host}/api/auth/google/callback`;
+
+      const tokenRes = await fetch('https://oauth2.googleapis.com/token', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+        body: new URLSearchParams({
+          code,
+          client_id: process.env.GOOGLE_CLIENT_ID!,
+          client_secret: process.env.GOOGLE_CLIENT_SECRET || '',
+          redirect_uri: redirectUri,
+          grant_type: 'authorization_code',
+        }),
+      });
+
+      if (!tokenRes.ok) {
+        return reply.redirect('/?auth=error&message=Failed+to+exchange+token');
+      }
+
+      const tokenData = (await tokenRes.json()) as { access_token: string };
+      const userInfoRes = await fetch('https://www.googleapis.com/oauth2/v3/userinfo', {
+        headers: { Authorization: `Bearer ${tokenData.access_token}` },
+      });
+
+      if (!userInfoRes.ok) {
+        return reply.redirect('/?auth=error&message=Failed+to+fetch+user+info');
+      }
+
+      const userInfo = (await userInfoRes.json()) as {
+        sub: string;
+        email: string;
+        name?: string;
+        picture?: string;
+      };
+
+      googleProfile = {
+        googleId: userInfo.sub,
+        email: userInfo.email,
+        displayName: userInfo.name || currentUser.displayName,
+        avatarUrl: userInfo.picture,
+      };
+    }
+
+    const { user: linkedUser, token } = await linkGoogleAccount(db, currentUser.id, googleProfile);
+
+    reply.setCookie('gr_token', token, {
+      path: '/',
+      httpOnly: true,
+      sameSite: 'lax',
+      maxAge: 365 * 24 * 3600,
+    });
+
+    return reply.redirect('/?auth=success');
+  });
+
+  // Client-side Google ID Token authentication
+  app.post<{
+    Body: { credential?: string };
+  }>('/api/auth/google/token', async (request, reply) => {
+    const { credential } = request.body || {};
+    if (!credential) {
+      return reply.status(400).send({ error: 'CREDENTIAL_REQUIRED' });
+    }
+
+    const rawCookie = request.cookies['gr_token'];
+    const { user: currentUser } = await getOrCreateGuestUser(db, rawCookie);
+
+    const verifyRes = await fetch(
+      `https://oauth2.googleapis.com/tokeninfo?id_token=${encodeURIComponent(credential)}`
+    );
+    if (!verifyRes.ok) {
+      return reply.status(401).send({ error: 'INVALID_CREDENTIAL' });
+    }
+
+    const tokenInfo = (await verifyRes.json()) as {
+      sub: string;
+      email: string;
+      name?: string;
+      picture?: string;
+    };
+
+    const googleProfile = {
+      googleId: tokenInfo.sub,
+      email: tokenInfo.email,
+      displayName: tokenInfo.name || currentUser.displayName,
+      avatarUrl: tokenInfo.picture,
+    };
+
+    const { user: linkedUser, token } = await linkGoogleAccount(db, currentUser.id, googleProfile);
+
+    reply.setCookie('gr_token', token, {
+      path: '/',
+      httpOnly: true,
+      sameSite: 'lax',
+      maxAge: 365 * 24 * 3600,
+    });
+
+    return {
+      success: true,
+      user: {
+        id: linkedUser.id,
+        displayName: linkedUser.displayName,
+        createdAt: linkedUser.createdAt,
+        email: linkedUser.email,
+        avatarUrl: linkedUser.avatarUrl,
+        isGoogleLinked: !!linkedUser.googleId,
+      },
+    };
+  });
+
+  // Logout Google Account (returns to guest session)
+  app.post('/api/auth/logout', async (request, reply) => {
+    const { user, token } = await getOrCreateGuestUser(db);
+    reply.setCookie('gr_token', token, {
+      path: '/',
+      httpOnly: true,
+      sameSite: 'lax',
+      maxAge: 365 * 24 * 3600,
+    });
+    return {
+      success: true,
+      user: {
+        id: user.id,
+        displayName: user.displayName,
+        createdAt: user.createdAt,
+        email: null,
+        avatarUrl: null,
+        isGoogleLinked: false,
+      },
     };
   });
 

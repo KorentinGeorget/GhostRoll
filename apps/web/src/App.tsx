@@ -188,11 +188,15 @@ export const App: React.FC = () => {
 
   // Initial user fetch & daily/archive loading
   useEffect(() => {
+    const urlParams = typeof window !== 'undefined' ? new URLSearchParams(window.location.search) : null;
+    if (urlParams?.get('auth') === 'success') {
+      window.history.replaceState({}, document.title, window.location.pathname);
+    }
+
     fetchMe().then((profile) => {
       if (profile) setUserProfile(profile);
     });
 
-    const urlParams = typeof window !== 'undefined' ? new URLSearchParams(window.location.search) : null;
     const requestedTrack = urlParams?.get('track') || urlParams?.get('level');
 
     setArchiveLoading(true);
@@ -456,6 +460,8 @@ export const App: React.FC = () => {
         onRestart={handleRestart}
         isNewPB={isNewPB}
         userDisplayName={userProfile?.displayName}
+        userAvatarUrl={userProfile?.avatarUrl}
+        isGoogleLinked={userProfile?.isGoogleLinked}
         onOpenLeaderboard={() => {
           refreshLeaderboard();
           setIsLeaderboardOpen(true);

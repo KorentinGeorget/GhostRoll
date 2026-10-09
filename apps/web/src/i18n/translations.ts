@@ -68,6 +68,12 @@ export const TRANSLATIONS = {
     linkSuccess: 'Device linked successfully! Records merged.',
     linkError: 'Failed to link device',
     accountCreated: 'Account created',
+    googleAuthTitle: 'Google Account',
+    googleAuthDesc: 'Sign in with Google to persist your records and leaderboard runs across devices.',
+    connectGoogle: 'Continue with Google',
+    connectedGoogle: 'Google Account Linked',
+    disconnectGoogle: 'Disconnect Account',
+    disconnecting: 'Disconnecting...',
 
     // Gyroscope / Mobile Controls
     gyroMode: 'Gyroscope Mode',
@@ -144,6 +150,12 @@ export const TRANSLATIONS = {
     linkSuccess: 'Appareil synchronisé ! Records fusionnés.',
     linkError: 'Impossible de lier l’appareil',
     accountCreated: 'Compte créé le',
+    googleAuthTitle: 'Compte Google',
+    googleAuthDesc: 'Connectez-vous avec Google pour conserver vos records et replays vérifiés sur tous vos appareils.',
+    connectGoogle: 'Continuer avec Google',
+    connectedGoogle: 'Compte Google associé',
+    disconnectGoogle: 'Déconnecter le compte',
+    disconnecting: 'Déconnexion...',
 
     // Gyroscope / Mobile Controls
     gyroMode: 'Mode Gyroscope',

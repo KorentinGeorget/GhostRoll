@@ -4,6 +4,9 @@ export interface UserProfile {
   id: string;
   displayName: string;
   createdAt: string;
+  email?: string;
+  avatarUrl?: string;
+  isGoogleLinked?: boolean;
 }
 
 export interface RunSubmitResponse {
@@ -165,6 +168,32 @@ export async function claimSyncCode(code: string): Promise<{ success: boolean; u
     return data;
   } catch (err: any) {
     return { success: false, error: err?.message || 'Network error claiming sync code' };
+  }
+}
+
+export async function fetchGoogleAuthUrl(): Promise<{ url: string; configured: boolean } | null> {
+  try {
+    const res = await fetch('/api/auth/google/url');
+    if (!res.ok) return null;
+    return await res.json();
+  } catch (err) {
+    console.warn('Failed to fetch Google auth url:', err);
+    return null;
+  }
+}
+
+export async function logoutUser(): Promise<UserProfile | null> {
+  try {
+    const res = await fetch('/api/auth/logout', {
+      method: 'POST',
+      credentials: 'include',
+    });
+    if (!res.ok) return null;
+    const data = await res.json();
+    return data.user;
+  } catch (err) {
+    console.warn('Failed to logout:', err);
+    return null;
   }
 }
 

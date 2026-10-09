@@ -41,9 +41,16 @@ async function initializeTables(db: DB): Promise<void> {
       id TEXT PRIMARY KEY,
       guest_token TEXT NOT NULL UNIQUE,
       display_name TEXT NOT NULL,
+      google_id TEXT UNIQUE,
+      email TEXT,
+      avatar_url TEXT,
       created_at TIMESTAMPTZ DEFAULT NOW() NOT NULL
     )
   `);
+
+  await db.execute(`ALTER TABLE users ADD COLUMN IF NOT EXISTS google_id TEXT UNIQUE`);
+  await db.execute(`ALTER TABLE users ADD COLUMN IF NOT EXISTS email TEXT`);
+  await db.execute(`ALTER TABLE users ADD COLUMN IF NOT EXISTS avatar_url TEXT`);
 
   await db.execute(`
     CREATE TABLE IF NOT EXISTS runs (
