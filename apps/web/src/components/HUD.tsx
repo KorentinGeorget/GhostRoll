@@ -18,9 +18,12 @@ import {
   Check,
   Smartphone,
   Gamepad2,
+  Volume2,
+  VolumeX,
 } from 'lucide-react';
 
 interface HUDProps {
+
   status: SimStatus;
   tick: number;
   stateHash: string;
@@ -47,7 +50,10 @@ interface HUDProps {
   onToggleGyro?: () => void;
   onCalibrateGyro?: () => void;
   isCalibrated?: boolean;
+  isMuted?: boolean;
+  onToggleMute?: () => void;
 }
+
 
 function formatTime(ticks: number): string {
   const totalSeconds = ticks / TICKS_PER_SECOND;
@@ -84,9 +90,12 @@ export const HUD: React.FC<HUDProps> = ({
   onToggleGyro,
   onCalibrateGyro,
   isCalibrated: _isCalibrated,
+  isMuted = false,
+  onToggleMute,
 }) => {
   const t = TRANSLATIONS[lang];
   const [copiedShare, setCopiedShare] = useState(false);
+
 
   const handleShare = () => {
     const shareText = formatShareCard({
@@ -156,8 +165,22 @@ export const HUD: React.FC<HUDProps> = ({
               <Trophy className="w-3.5 h-3.5" />
               <span>{t.leaderboard}</span>
             </button>
+            {onToggleMute && (
+              <button
+                onClick={onToggleMute}
+                className="glass-pill rounded-xl px-2.5 py-1.5 flex items-center space-x-1 text-xs text-slate-300 hover:bg-white/10 transition shadow cursor-pointer"
+                title={isMuted ? 'Unmute' : 'Mute'}
+              >
+                {isMuted ? (
+                  <VolumeX className="w-3.5 h-3.5 text-rose-400" />
+                ) : (
+                  <Volume2 className="w-3.5 h-3.5 text-indigo-400" />
+                )}
+              </button>
+            )}
           </div>
         </div>
+
 
         {/* Live Timer */}
         <div className="glass-panel rounded-2xl px-6 py-3 flex flex-col items-center">

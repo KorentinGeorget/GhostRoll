@@ -1,0 +1,17 @@
+{
+  "name": "Ghostroll",
+  "short_name": "Ghostroll",
+  "description": "Daily 3D marble time-trial game with bit-level deterministic WebAssembly physics.",
+  "start_url": "/",
+  "display": "standalone",
+  "orientation": "portrait",
+  "background_color": "#090d16",
+  "theme_color": "#090d16",
+  "icons": [
+    {
+      "src": "/icon.svg",
+      "sizes": "any",
+      "type": "image/svg+xml"
+    }
+  ]
+}

@@ -24,6 +24,8 @@ import { TrackSelectorModal } from './components/TrackSelectorModal.js';
 import { ProfileModal } from './components/ProfileModal.js';
 import { useControls } from './hooks/useControls.js';
 import { Language, getInitialLanguage } from './i18n/translations.js';
+import { soundFX } from './utils/audio.js';
+
 import {
   getStoredPB,
   saveStoredPB,
@@ -57,6 +59,7 @@ export const App: React.FC = () => {
 
   // Language state (i18n)
   const [lang, setLang] = useState<Language>(getInitialLanguage());
+  const [isMuted, setIsMuted] = useState(soundFX.muted);
 
   const handleLanguageChange = (newLang: Language) => {
     setLang(newLang);
@@ -64,6 +67,11 @@ export const App: React.FC = () => {
       localStorage.setItem('gr_lang', newLang);
     }
   };
+
+  const handleToggleMute = () => {
+    setIsMuted(soundFX.toggleMute());
+  };
+
 
   // Daily info and Archive state
   const [dailyInfo, setDailyInfo] = useState<{ levelId: string; name: string; date: string } | null>(null);
@@ -122,6 +130,7 @@ export const App: React.FC = () => {
   const recordedInputs = useRef<InputFrame[]>([]);
   const recordedSamples = useRef<GhostSample[]>([]);
   const hasWonRef = useRef(false);
+  const hasDiedRef = useRef(false);
 
   // Restart function
   const handleRestart = useCallback(() => {
@@ -130,6 +139,7 @@ export const App: React.FC = () => {
     recordedInputs.current = [];
     recordedSamples.current = [];
     hasWonRef.current = false;
+    hasDiedRef.current = false;
     setIsNewPB(false);
     setSubmitStatus('idle');
     setSubmitMessage('');
@@ -139,6 +149,7 @@ export const App: React.FC = () => {
     setRenderVel(initial.ball.velocity);
     setGhostRenderPos(null);
   }, []);
+
 
   // Track selection handler
   const handleSelectTrack = useCallback(async (trackId: string) => {
@@ -286,6 +297,7 @@ export const App: React.FC = () => {
           // Handle Win celebration, PB check, and Server Replay Verification
           if (state.status === 'won' && !hasWonRef.current) {
             hasWonRef.current = true;
+            soundFX.playVictory();
             confetti({
               particleCount: 120,
               spread: 80,
@@ -334,7 +346,11 @@ export const App: React.FC = () => {
                 setSubmitMessage(res.reason || res.error || 'Server validation rejected run');
               }
             });
+          } else if (state.status === 'dead' && !hasDiedRef.current) {
+            hasDiedRef.current = true;
+            soundFX.playFall();
           }
+
         }
         accumulator -= FIXED_DT;
       }
@@ -446,7 +462,10 @@ export const App: React.FC = () => {
         onToggleGyro={handleToggleGyro}
         onCalibrateGyro={calibrateGyro}
         isCalibrated={isCalibrated}
+        isMuted={isMuted}
+        onToggleMute={handleToggleMute}
       />
+
 
       {/* Leaderboard Modal */}
       <LeaderboardModal
