@@ -305,7 +305,11 @@ export const App: React.FC = () => {
 
           // Only record active frames (eliminates idle jitter before start)
           if (newState.status === 'playing' || newState.status === 'won') {
-            recordedInputs.current.push(input);
+            recordedInputs.current.push({
+              tiltX: input.tiltX,
+              tiltZ: input.tiltZ,
+              ...(input.jump ? { jump: true } : {}),
+            });
           }
 
           state = newState;
@@ -335,12 +339,13 @@ export const App: React.FC = () => {
             const currentPB = getStoredPB(level.id);
 
             const isBetter = !currentPB || currentTicks < currentPB.ticks;
-            const replayPayload: ReplayPayload = {
+            const replayPayload: ReplayPayload & { claimedTicks: number } = {
               magic: 'GRRP',
               formatVersion: 1,
               simVersion: level.simVersion,
               levelId: level.id,
               tickCount: currentTicks,
+              claimedTicks: currentTicks,
               finalHash: state.hash,
               inputs: [...recordedInputs.current],
             };

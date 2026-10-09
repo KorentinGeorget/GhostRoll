@@ -75,8 +75,13 @@ export async function buildApp(opts: AppOptions = {}): Promise<FastifyInstance> 
       return { level: LEVEL_1, palette: generateDailyPalette('trial01') };
     }
 
-    if (levelId.startsWith('daily-') || levelId.startsWith('seed-') || levelId.startsWith('custom-')) {
-      const seed = levelId.replace(/^(daily-|seed-|custom-)/, '');
+    if (
+      levelId.startsWith('daily-') ||
+      levelId.startsWith('seed-') ||
+      levelId.startsWith('custom-') ||
+      levelId.startsWith('random-')
+    ) {
+      const seed = levelId.replace(/^(daily-|seed-|custom-|random-)/, '');
       return generateDailyLevel(seed);
     }
     try {
