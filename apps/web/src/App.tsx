@@ -7,7 +7,6 @@ import {
   LevelDefinition,
   ReplayPayload,
   SimState,
-  SimStatus,
 } from '@ghostroll/shared';
 import {
   createSimulation,
@@ -18,6 +17,7 @@ import {
 import { CanvasView } from './components/CanvasView.js';
 import { HUD } from './components/HUD.js';
 import { VirtualJoystick } from './components/VirtualJoystick.js';
+import { LeaderboardModal } from './components/LeaderboardModal.js';
 import { useControls } from './hooks/useControls.js';
 import {
   getStoredPB,
@@ -25,10 +25,37 @@ import {
   sampleGhostPosition,
   StoredPB,
 } from './utils/ghostStorage.js';
+import {
+  fetchMe,
+  fetchLeaderboard,
+  submitRun,
+  UserProfile,
+  LeaderboardEntry,
+} from './api/client.js';
+
+if (typeof window !== 'undefined') {
+  (window as any).__GHOSTROLL_SIM__ = {
+    initPhysics,
+    createSimulation,
+    LEVEL_1,
+  };
+}
 
 export const App: React.FC = () => {
   const [physicsReady, setPhysicsReady] = useState(false);
   const [level] = useState<LevelDefinition>(LEVEL_1);
+
+  // User profile & Server sync state
+  const [userProfile, setUserProfile] = useState<UserProfile | null>(null);
+  const [leaderboard, setLeaderboard] = useState<LeaderboardEntry[]>([]);
+  const [leaderboardLoading, setLeaderboardLoading] = useState(false);
+  const [isLeaderboardOpen, setIsLeaderboardOpen] = useState(false);
+  const [activeGhostSource, setActiveGhostSource] = useState<'pb' | 'leaderboard'>('pb');
+  const [selectedLeaderboardGhost, setSelectedLeaderboardGhost] = useState<LeaderboardEntry | null>(null);
+
+  // Run submission status
+  const [submitStatus, setSubmitStatus] = useState<'idle' | 'submitting' | 'verified' | 'rejected'>('idle');
+  const [submitMessage, setSubmitMessage] = useState<string>('');
 
   // Live simulation UI state
   const [simState, setSimState] = useState<SimState | null>(null);
@@ -50,7 +77,31 @@ export const App: React.FC = () => {
   const recordedSamples = useRef<GhostSample[]>([]);
   const hasWonRef = useRef(false);
 
-  // Initialize Physics & Load PB
+  // Load User & Leaderboard from Backend
+  const refreshLeaderboard = useCallback(async () => {
+    setLeaderboardLoading(true);
+    const data = await fetchLeaderboard(level.id);
+    if (data) {
+      setLeaderboard(data.leaderboard);
+      // If we don't have a PB yet but there's a World Record ghost, auto-target it!
+      if (data.leaderboard.length > 0 && data.leaderboard[0].ghostSamples) {
+        if (!getStoredPB(level.id)) {
+          setSelectedLeaderboardGhost(data.leaderboard[0]);
+          setActiveGhostSource('leaderboard');
+        }
+      }
+    }
+    setLeaderboardLoading(false);
+  }, [level.id]);
+
+  useEffect(() => {
+    fetchMe().then((profile) => {
+      if (profile) setUserProfile(profile);
+    });
+    refreshLeaderboard();
+  }, [refreshLeaderboard]);
+
+  // Initialize Physics & Load Local PB
   useEffect(() => {
     let mounted = true;
     initPhysics().then(() => {
@@ -80,6 +131,8 @@ export const App: React.FC = () => {
     recordedSamples.current = [];
     hasWonRef.current = false;
     setIsNewPB(false);
+    setSubmitStatus('idle');
+    setSubmitMessage('');
     const initial = simRef.current.getState();
     setSimState(initial);
     setRenderPos(initial.ball.position);
@@ -107,7 +160,7 @@ export const App: React.FC = () => {
     let accumulator = 0;
 
     const loop = (currentTime: number) => {
-      const deltaSec = Math.min((currentTime - lastTime) / 1000, 0.1); // Clamp to prevent spiral of death
+      const deltaSec = Math.min((currentTime - lastTime) / 1000, 0.1);
       lastTime = currentTime;
       accumulator += deltaSec;
 
@@ -137,21 +190,30 @@ export const App: React.FC = () => {
             ]);
           }
 
-          // Handle Win celebration & PB check
+          // Handle Win celebration, PB check, and Server Replay Verification
           if (state.status === 'won' && !hasWonRef.current) {
             hasWonRef.current = true;
             confetti({
-              particleCount: 100,
-              spread: 70,
+              particleCount: 120,
+              spread: 80,
               origin: { y: 0.6 },
-              colors: ['#38bdf8', '#818cf8', '#34d399', '#f43f5e'],
+              colors: ['#38bdf8', '#818cf8', '#34d399', '#f43f5e', '#fbbf24'],
             });
 
-            // Check Personal Best
             const currentTicks = state.tick;
             const currentPB = getStoredPB(level.id);
 
             const isBetter = !currentPB || currentTicks < currentPB.ticks;
+            const replayPayload: ReplayPayload = {
+              magic: 'GRRP',
+              formatVersion: 1,
+              simVersion: level.simVersion,
+              levelId: level.id,
+              tickCount: currentTicks,
+              finalHash: state.hash,
+              inputs: [...recordedInputs.current],
+            };
+
             if (isBetter) {
               setIsNewPB(true);
               const newPB: StoredPB = {
@@ -161,19 +223,24 @@ export const App: React.FC = () => {
                 date: new Date().toISOString(),
                 finalHash: state.hash,
                 samples: recordedSamples.current,
-                replay: {
-                  magic: 'GRRP',
-                  formatVersion: 1,
-                  simVersion: level.simVersion,
-                  levelId: level.id,
-                  tickCount: currentTicks,
-                  finalHash: state.hash,
-                  inputs: recordedInputs.current,
-                },
+                replay: replayPayload,
               };
               saveStoredPB(newPB);
               setPersonalBest(newPB);
             }
+
+            // Submit replay to Fastify backend for server-side verification
+            setSubmitStatus('submitting');
+            submitRun(replayPayload).then((res) => {
+              if (res.success) {
+                setSubmitStatus('verified');
+                setSubmitMessage(`Verified: ${res.timeSeconds}s (hash ${res.finalHash})`);
+                refreshLeaderboard();
+              } else {
+                setSubmitStatus('rejected');
+                setSubmitMessage(res.reason || res.error || 'Server validation rejected run');
+              }
+            });
           }
         }
         accumulator -= FIXED_DT;
@@ -183,10 +250,21 @@ export const App: React.FC = () => {
       setRenderPos(state.ball.position);
       setRenderVel(state.ball.velocity);
 
-      // Interpolate Ghost
-      if (showGhost && personalBest) {
-        const ghostP = sampleGhostPosition(personalBest.samples, state.tick);
-        setGhostRenderPos(ghostP);
+      // Interpolate Ghost (from either PB or selected Leaderboard runner)
+      if (showGhost) {
+        let activeSamples: GhostSample[] | null = null;
+        if (activeGhostSource === 'leaderboard' && selectedLeaderboardGhost?.ghostSamples) {
+          activeSamples = selectedLeaderboardGhost.ghostSamples;
+        } else if (personalBest?.samples) {
+          activeSamples = personalBest.samples;
+        }
+
+        if (activeSamples) {
+          const ghostP = sampleGhostPosition(activeSamples, state.tick);
+          setGhostRenderPos(ghostP);
+        } else {
+          setGhostRenderPos(null);
+        }
       } else {
         setGhostRenderPos(null);
       }
@@ -199,7 +277,16 @@ export const App: React.FC = () => {
 
     animId = requestAnimationFrame(loop);
     return () => cancelAnimationFrame(animId);
-  }, [physicsReady, getInput, level, showGhost, personalBest]);
+  }, [
+    physicsReady,
+    getInput,
+    level,
+    showGhost,
+    personalBest,
+    activeGhostSource,
+    selectedLeaderboardGhost,
+    refreshLeaderboard,
+  ]);
 
   if (!physicsReady || !simState) {
     return (
@@ -215,6 +302,11 @@ export const App: React.FC = () => {
   const speedMagnitude = Math.sqrt(
     renderVel[0] * renderVel[0] + renderVel[1] * renderVel[1] + renderVel[2] * renderVel[2]
   );
+
+  const activeGhostName =
+    activeGhostSource === 'leaderboard' && selectedLeaderboardGhost
+      ? `#${selectedLeaderboardGhost.rank} ${selectedLeaderboardGhost.displayName}`
+      : 'Personal Best';
 
   return (
     <div className="relative w-full h-full select-none overflow-hidden">
@@ -238,6 +330,26 @@ export const App: React.FC = () => {
         onToggleGhost={() => setShowGhost((v) => !v)}
         onRestart={handleRestart}
         isNewPB={isNewPB}
+        userDisplayName={userProfile?.displayName}
+        onOpenLeaderboard={() => setIsLeaderboardOpen(true)}
+        submitStatus={submitStatus}
+        submitMessage={submitMessage}
+        activeGhostName={activeGhostName}
+      />
+
+      {/* Leaderboard Modal */}
+      <LeaderboardModal
+        isOpen={isLeaderboardOpen}
+        onClose={() => setIsLeaderboardOpen(false)}
+        entries={leaderboard}
+        loading={leaderboardLoading}
+        selectedGhostRunId={selectedLeaderboardGhost?.runId}
+        onSelectGhost={(entry) => {
+          setSelectedLeaderboardGhost(entry);
+          setActiveGhostSource('leaderboard');
+          setIsLeaderboardOpen(false);
+          handleRestart();
+        }}
       />
 
       {/* Touch Joystick on Mobile */}

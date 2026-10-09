@@ -1,14 +1,15 @@
 # Ghostroll 🌀
 
-> Daily 3D marble speedrun platformer built with **deterministic WebAssembly physics**, asynchronous ghost racing, and server-side replay validation.
+> Daily 3D marble speedrun platformer built with **deterministic WebAssembly physics**, asynchronous ghost racing, and **authoritative server-side replay validation**.
 
 ## Highlights
 
 - **Bit-Level Deterministic Physics**: Uses `@dimforge/rapier3d-deterministic-compat` with a fixed 60 Hz timestep and integer-quantized inputs.
 - **Trigonometry-Free Gravity Math**: All gravitational vector calculations avoid `Math.sin` / `Math.cos` to circumvent cross-engine float divergences across V8, SpiderMonkey, and JavaScriptCore.
-- **Pure Simulation Package**: `packages/sim` contains 0 DOM/Three.js dependencies and can run headlessly in Node.js, Web workers, and server validation queues.
-- **Asynchronous Ghost Racing**: Ghost trajectories are recorded at 20 Hz, interpolated with binary search lerping, and saved locally to challenge personal records.
-- **Real-Time Determinism Telemetry**: FNV-1a state hashes computed over ball float states in real-time.
+- **Authoritative Server Validation**: `POST /api/runs` accepts the player's inputs and re-simulates the full run on the server in headless WASM. Replays with tampered hashes or hacked times are rejected with HTTP 422.
+- **Global Asynchronous Ghost Racing**: The server records verified runs, extracts 20 Hz trajectory samples, and serves them to players via `GET /api/levels/:id/leaderboard` to race against top ghosts in real-time.
+- **Zero-Friction Anonymous Auth**: Players are automatically provisioned with secure signed guest tokens and custom gamer tags without requiring registration.
+- **CI / Cross-Engine Verification**: Playwright suite asserts bit-exact hash parity across Chromium (V8) and Firefox (SpiderMonkey).
 
 ## Architecture
 
@@ -18,24 +19,38 @@ ghostroll/
 │   ├── sim/         # Pure TS deterministic physics engine (Rapier WASM)
 │   └── shared/      # Types, Zod validation schemas, replay RLE codec
 └── apps/
+    ├── server/      # Fastify API + Drizzle ORM + replay verification engine
     └── web/         # React Three Fiber + Drei + React HUD + Vite
 ```
 
 ## Quick Start
 
 ```bash
-# Install dependencies
+# 1. Install dependencies
 pnpm install
 
-# Run Vitest determinism & golden replay suite
+# 2. Run unit & replay verification tests (Vitest)
 pnpm test
 
-# Build all packages
+# 3. Build all packages
 pnpm build
 
-# Launch web dev server
+# 4. Start backend API server (port 3001)
+pnpm dev:server
+
+# 5. Start web frontend (port 5173 with automatic API proxy)
 pnpm dev
+
+# 6. Run cross-browser Playwright test
+pnpm test:e2e
 ```
+
+## API Endpoints
+
+- `GET /health` — Health check endpoint.
+- `GET /api/me` — Retrieves or provisions anonymous guest profile with signed HTTP-only cookie.
+- `POST /api/runs` — Submits replay inputs for deterministic server-side re-simulation and leaderboard recording.
+- `GET /api/levels/:levelId/leaderboard` — Fetches top verified players, ranks, times, and ghost trajectories.
 
 ## Controls
 

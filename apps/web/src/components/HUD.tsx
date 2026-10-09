@@ -1,7 +1,7 @@
 import React from 'react';
 import { SimStatus, TICKS_PER_SECOND } from '@ghostroll/shared';
 import { StoredPB } from '../utils/ghostStorage.js';
-import { RotateCcw, Trophy, Eye, EyeOff, Hash, Zap } from 'lucide-react';
+import { RotateCcw, Trophy, Eye, EyeOff, Hash, Zap, CheckCircle2, AlertTriangle, User as UserIcon } from 'lucide-react';
 
 interface HUDProps {
   status: SimStatus;
@@ -13,6 +13,11 @@ interface HUDProps {
   onToggleGhost: () => void;
   onRestart: () => void;
   isNewPB: boolean;
+  userDisplayName?: string;
+  onOpenLeaderboard: () => void;
+  submitStatus?: 'idle' | 'submitting' | 'verified' | 'rejected';
+  submitMessage?: string;
+  activeGhostName?: string;
 }
 
 function formatTime(ticks: number): string {
@@ -33,23 +38,47 @@ export const HUD: React.FC<HUDProps> = ({
   onToggleGhost,
   onRestart,
   isNewPB,
+  userDisplayName,
+  onOpenLeaderboard,
+  submitStatus = 'idle',
+  submitMessage,
+  activeGhostName = 'Personal Best',
 }) => {
   return (
     <div className="absolute inset-0 pointer-events-none flex flex-col justify-between p-4 md:p-6">
       {/* Top Header */}
       <div className="flex items-start justify-between">
-        {/* Game Title & Track */}
-        <div className="glass-panel rounded-2xl px-5 py-3 pointer-events-auto flex items-center space-x-4">
-          <div>
-            <div className="flex items-center space-x-2">
-              <h1 className="text-xl md:text-2xl font-extrabold tracking-wider bg-gradient-to-r from-indigo-400 via-sky-300 to-purple-400 bg-clip-text text-transparent">
-                GHOSTROLL
-              </h1>
-              <span className="text-[10px] uppercase font-bold tracking-widest px-2 py-0.5 rounded-full bg-indigo-500/20 text-indigo-300 border border-indigo-500/30">
-                v0.1
-              </span>
+        {/* Game Title, User Profile & Leaderboard trigger */}
+        <div className="flex flex-col space-y-2 pointer-events-auto">
+          <div className="glass-panel rounded-2xl px-5 py-3 flex items-center space-x-4">
+            <div>
+              <div className="flex items-center space-x-2">
+                <h1 className="text-xl md:text-2xl font-extrabold tracking-wider bg-gradient-to-r from-indigo-400 via-sky-300 to-purple-400 bg-clip-text text-transparent">
+                  GHOSTROLL
+                </h1>
+                <span className="text-[10px] uppercase font-bold tracking-widest px-2 py-0.5 rounded-full bg-emerald-500/20 text-emerald-300 border border-emerald-500/30">
+                  v0.2
+                </span>
+              </div>
+              <p className="text-xs text-slate-400 font-medium">Trial Track: Neon Dawn</p>
             </div>
-            <p className="text-xs text-slate-400 font-medium">Trial Track: Neon Dawn</p>
+          </div>
+
+          {/* User profile & Leaderboard Button */}
+          <div className="flex items-center space-x-2">
+            {userDisplayName && (
+              <div className="glass-pill rounded-xl px-3 py-1.5 flex items-center space-x-1.5 text-xs text-slate-300">
+                <UserIcon className="w-3.5 h-3.5 text-indigo-400" />
+                <span className="font-semibold">{userDisplayName}</span>
+              </div>
+            )}
+            <button
+              onClick={onOpenLeaderboard}
+              className="glass-pill rounded-xl px-3.5 py-1.5 flex items-center space-x-1.5 text-xs font-semibold text-amber-300 hover:bg-white/10 transition shadow"
+            >
+              <Trophy className="w-3.5 h-3.5" />
+              <span>Leaderboard</span>
+            </button>
           </div>
         </div>
 
@@ -74,26 +103,24 @@ export const HUD: React.FC<HUDProps> = ({
           </div>
         </div>
 
-        {/* PB & Determinism Card */}
-        <div className="glass-panel rounded-2xl p-3 md:p-4 pointer-events-auto flex flex-col space-y-2 min-w-[160px]">
+        {/* PB, Ghost & Determinism Card */}
+        <div className="glass-panel rounded-2xl p-3 md:p-4 pointer-events-auto flex flex-col space-y-2 min-w-[170px]">
           <div className="flex items-center justify-between">
-            <div className="flex items-center space-x-1.5 text-xs text-amber-300 font-bold">
+            <div className="flex items-center space-x-1.5 text-xs text-purple-300 font-bold">
               <Trophy className="w-3.5 h-3.5" />
-              <span>Personal Best</span>
+              <span>Ghost: {activeGhostName}</span>
             </div>
-            {personalBest && (
-              <button
-                onClick={onToggleGhost}
-                title={showGhost ? 'Hide ghost' : 'Show ghost'}
-                className="p-1 rounded hover:bg-white/10 text-slate-400 hover:text-white transition"
-              >
-                {showGhost ? <Eye className="w-3.5 h-3.5 text-purple-400" /> : <EyeOff className="w-3.5 h-3.5" />}
-              </button>
-            )}
+            <button
+              onClick={onToggleGhost}
+              title={showGhost ? 'Hide ghost' : 'Show ghost'}
+              className="p-1 rounded hover:bg-white/10 text-slate-400 hover:text-white transition"
+            >
+              {showGhost ? <Eye className="w-3.5 h-3.5 text-purple-400" /> : <EyeOff className="w-3.5 h-3.5" />}
+            </button>
           </div>
 
           <div className="font-mono text-sm font-semibold text-slate-200">
-            {personalBest ? formatTime(personalBest.ticks) : '— No time yet —'}
+            {personalBest ? formatTime(personalBest.ticks) : '— No record yet —'}
           </div>
 
           {/* Engine Determinism Hash Badge */}
@@ -118,7 +145,7 @@ export const HUD: React.FC<HUDProps> = ({
           </h2>
           <p className="text-slate-300 text-sm mb-4">Course completed smoothly.</p>
 
-          <div className="bg-slate-900/60 rounded-xl p-4 mb-6 border border-white/5">
+          <div className="bg-slate-900/60 rounded-xl p-4 mb-4 border border-white/5">
             <div className="text-xs text-slate-400 font-bold uppercase tracking-wider mb-1">
               Final Time
             </div>
@@ -126,17 +153,55 @@ export const HUD: React.FC<HUDProps> = ({
               {formatTime(tick)}
             </div>
             <div className="text-xs text-slate-400 font-mono">
-              Replay validated with {tick} frames (hash {stateHash})
+              Replay: {tick} frames (hash {stateHash})
             </div>
           </div>
 
-          <button
-            onClick={onRestart}
-            className="w-full py-3.5 px-6 rounded-xl bg-gradient-to-r from-emerald-500 to-teal-500 hover:from-emerald-400 hover:to-teal-400 font-bold text-white shadow-lg transition flex items-center justify-center space-x-2"
-          >
-            <RotateCcw className="w-4 h-4" />
-            <span>Play Again (R)</span>
-          </button>
+          {/* Server Verification Status Banner */}
+          <div className="mb-6 p-3 rounded-xl border text-xs flex items-center justify-center space-x-2 bg-slate-900/50">
+            {submitStatus === 'submitting' && (
+              <>
+                <div className="w-3.5 h-3.5 rounded-full border-2 border-indigo-400 border-t-transparent animate-spin" />
+                <span className="text-indigo-300 font-medium">Validating replay on server...</span>
+              </>
+            )}
+            {submitStatus === 'verified' && (
+              <>
+                <CheckCircle2 className="w-4 h-4 text-emerald-400" />
+                <span className="text-emerald-300 font-medium font-mono">
+                  {submitMessage || 'Replay 100% verified by server! Posted to leaderboard.'}
+                </span>
+              </>
+            )}
+            {submitStatus === 'rejected' && (
+              <>
+                <AlertTriangle className="w-4 h-4 text-rose-400" />
+                <span className="text-rose-300 font-medium font-mono">
+                  Rejection: {submitMessage || 'Server simulation diverged'}
+                </span>
+              </>
+            )}
+            {submitStatus === 'idle' && (
+              <span className="text-slate-400">Replay recorded</span>
+            )}
+          </div>
+
+          <div className="flex space-x-3">
+            <button
+              onClick={onOpenLeaderboard}
+              className="flex-1 py-3 px-4 rounded-xl bg-white/10 hover:bg-white/15 font-semibold text-white transition flex items-center justify-center space-x-2"
+            >
+              <Trophy className="w-4 h-4 text-amber-300" />
+              <span>Leaderboard</span>
+            </button>
+            <button
+              onClick={onRestart}
+              className="flex-1 py-3 px-4 rounded-xl bg-gradient-to-r from-emerald-500 to-teal-500 hover:from-emerald-400 hover:to-teal-400 font-bold text-white shadow-lg transition flex items-center justify-center space-x-2"
+            >
+              <RotateCcw className="w-4 h-4" />
+              <span>Play Again (R)</span>
+            </button>
+          </div>
         </div>
       )}
 
@@ -166,7 +231,7 @@ export const HUD: React.FC<HUDProps> = ({
             <kbd className="px-2 py-0.5 rounded bg-slate-800 border border-slate-700 font-mono text-[11px] text-white">
               WASD / ZQSD
             </kbd>
-            <span className="text-slate-400">to tilt board</span>
+            <span className="text-slate-400">to tilt</span>
           </span>
           <span className="text-slate-600">|</span>
           <span className="flex items-center space-x-1">

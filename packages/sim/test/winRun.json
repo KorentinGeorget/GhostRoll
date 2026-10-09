@@ -1,0 +1,1352 @@
+{
+  "levelId": "daily-2026-10-09-seed01",
+  "simVersion": 1,
+  "claimedTicks": 336,
+  "finalHash": "b72cbd05",
+  "inputs": [
+    {
+      "tiltX": 0,
+      "tiltZ": 60
+    },
+    {
+      "tiltX": 0,
+      "tiltZ": 60
+    },
+    {
+      "tiltX": 0,
+      "tiltZ": 60
+    },
+    {
+      "tiltX": 0,
+      "tiltZ": 60
+    },
+    {
+      "tiltX": 0,
+      "tiltZ": 60
+    },
+    {
+      "tiltX": 0,
+      "tiltZ": 60
+    },
+    {
+      "tiltX": 0,
+      "tiltZ": 60
+    },
+    {
+      "tiltX": 0,
+      "tiltZ": 60
+    },
+    {
+      "tiltX": 0,
+      "tiltZ": 60
+    },
+    {
+      "tiltX": 0,
+      "tiltZ": 60
+    },
+    {
+      "tiltX": 0,
+      "tiltZ": 60
+    },
+    {
+      "tiltX": 0,
+      "tiltZ": 60
+    },
+    {
+      "tiltX": 0,
+      "tiltZ": 60
+    },
+    {
+      "tiltX": 0,
+      "tiltZ": 60
+    },
+    {
+      "tiltX": 0,
+      "tiltZ": 60
+    },
+    {
+      "tiltX": 0,
+      "tiltZ": 60
+    },
+    {
+      "tiltX": 0,
+      "tiltZ": 60
+    },
+    {
+      "tiltX": 0,
+      "tiltZ": 60
+    },
+    {
+      "tiltX": 0,
+      "tiltZ": 60
+    },
+    {
+      "tiltX": 0,
+      "tiltZ": 60
+    },
+    {
+      "tiltX": 0,
+      "tiltZ": 60
+    },
+    {
+      "tiltX": 0,
+      "tiltZ": 60
+    },
+    {
+      "tiltX": 0,
+      "tiltZ": 60
+    },
+    {
+      "tiltX": 0,
+      "tiltZ": 60
+    },
+    {
+      "tiltX": 0,
+      "tiltZ": 60
+    },
+    {
+      "tiltX": 0,
+      "tiltZ": 60
+    },
+    {
+      "tiltX": 0,
+      "tiltZ": 60
+    },
+    {
+      "tiltX": 0,
+      "tiltZ": 60
+    },
+    {
+      "tiltX": 0,
+      "tiltZ": 60
+    },
+    {
+      "tiltX": 0,
+      "tiltZ": 60
+    },
+    {
+      "tiltX": 0,
+      "tiltZ": 60
+    },
+    {
+      "tiltX": 0,
+      "tiltZ": 60
+    },
+    {
+      "tiltX": 0,
+      "tiltZ": 60
+    },
+    {
+      "tiltX": 0,
+      "tiltZ": 60
+    },
+    {
+      "tiltX": 0,
+      "tiltZ": 60
+    },
+    {
+      "tiltX": 0,
+      "tiltZ": 60
+    },
+    {
+      "tiltX": 0,
+      "tiltZ": 60
+    },
+    {
+      "tiltX": 0,
+      "tiltZ": 60
+    },
+    {
+      "tiltX": 0,
+      "tiltZ": 60
+    },
+    {
+      "tiltX": 0,
+      "tiltZ": 60
+    },
+    {
+      "tiltX": 0,
+      "tiltZ": 60
+    },
+    {
+      "tiltX": 0,
+      "tiltZ": 60
+    },
+    {
+      "tiltX": 0,
+      "tiltZ": 60
+    },
+    {
+      "tiltX": 0,
+      "tiltZ": 60
+    },
+    {
+      "tiltX": 0,
+      "tiltZ": 60
+    },
+    {
+      "tiltX": 0,
+      "tiltZ": 60
+    },
+    {
+      "tiltX": 0,
+      "tiltZ": 60
+    },
+    {
+      "tiltX": 0,
+      "tiltZ": 60
+    },
+    {
+      "tiltX": 0,
+      "tiltZ": 60
+    },
+    {
+      "tiltX": 0,
+      "tiltZ": 60
+    },
+    {
+      "tiltX": 0,
+      "tiltZ": 60
+    },
+    {
+      "tiltX": 0,
+      "tiltZ": 60
+    },
+    {
+      "tiltX": 0,
+      "tiltZ": 60
+    },
+    {
+      "tiltX": 0,
+      "tiltZ": 60
+    },
+    {
+      "tiltX": 0,
+      "tiltZ": 60
+    },
+    {
+      "tiltX": 0,
+      "tiltZ": 60
+    },
+    {
+      "tiltX": 0,
+      "tiltZ": 60
+    },
+    {
+      "tiltX": 0,
+      "tiltZ": 60
+    },
+    {
+      "tiltX": 0,
+      "tiltZ": 60
+    },
+    {
+      "tiltX": 0,
+      "tiltZ": 60
+    },
+    {
+      "tiltX": 0,
+      "tiltZ": 60
+    },
+    {
+      "tiltX": 0,
+      "tiltZ": 60
+    },
+    {
+      "tiltX": 0,
+      "tiltZ": 60
+    },
+    {
+      "tiltX": 0,
+      "tiltZ": 60
+    },
+    {
+      "tiltX": 0,
+      "tiltZ": 60
+    },
+    {
+      "tiltX": 0,
+      "tiltZ": 60
+    },
+    {
+      "tiltX": 0,
+      "tiltZ": 60
+    },
+    {
+      "tiltX": 0,
+      "tiltZ": 60
+    },
+    {
+      "tiltX": 0,
+      "tiltZ": 60
+    },
+    {
+      "tiltX": 0,
+      "tiltZ": 60
+    },
+    {
+      "tiltX": 0,
+      "tiltZ": 60
+    },
+    {
+      "tiltX": 0,
+      "tiltZ": 60
+    },
+    {
+      "tiltX": 0,
+      "tiltZ": 60
+    },
+    {
+      "tiltX": 0,
+      "tiltZ": 60
+    },
+    {
+      "tiltX": 0,
+      "tiltZ": 60
+    },
+    {
+      "tiltX": 0,
+      "tiltZ": 60
+    },
+    {
+      "tiltX": 0,
+      "tiltZ": 60
+    },
+    {
+      "tiltX": 0,
+      "tiltZ": 60
+    },
+    {
+      "tiltX": 0,
+      "tiltZ": 60
+    },
+    {
+      "tiltX": 0,
+      "tiltZ": 60
+    },
+    {
+      "tiltX": 0,
+      "tiltZ": 60
+    },
+    {
+      "tiltX": 0,
+      "tiltZ": 60
+    },
+    {
+      "tiltX": 0,
+      "tiltZ": 60
+    },
+    {
+      "tiltX": 0,
+      "tiltZ": 60
+    },
+    {
+      "tiltX": 0,
+      "tiltZ": 60
+    },
+    {
+      "tiltX": 0,
+      "tiltZ": 60
+    },
+    {
+      "tiltX": 0,
+      "tiltZ": 60
+    },
+    {
+      "tiltX": 0,
+      "tiltZ": 60
+    },
+    {
+      "tiltX": 0,
+      "tiltZ": 60
+    },
+    {
+      "tiltX": 0,
+      "tiltZ": 60
+    },
+    {
+      "tiltX": 0,
+      "tiltZ": 60
+    },
+    {
+      "tiltX": 0,
+      "tiltZ": 60
+    },
+    {
+      "tiltX": 0,
+      "tiltZ": 60
+    },
+    {
+      "tiltX": 0,
+      "tiltZ": 60
+    },
+    {
+      "tiltX": 0,
+      "tiltZ": 60
+    },
+    {
+      "tiltX": 0,
+      "tiltZ": 60
+    },
+    {
+      "tiltX": 0,
+      "tiltZ": 60
+    },
+    {
+      "tiltX": 0,
+      "tiltZ": 60
+    },
+    {
+      "tiltX": 0,
+      "tiltZ": 60
+    },
+    {
+      "tiltX": 0,
+      "tiltZ": 60
+    },
+    {
+      "tiltX": 0,
+      "tiltZ": 60
+    },
+    {
+      "tiltX": 0,
+      "tiltZ": 60
+    },
+    {
+      "tiltX": 0,
+      "tiltZ": 60
+    },
+    {
+      "tiltX": 0,
+      "tiltZ": 60
+    },
+    {
+      "tiltX": 0,
+      "tiltZ": 60
+    },
+    {
+      "tiltX": 0,
+      "tiltZ": 60
+    },
+    {
+      "tiltX": 0,
+      "tiltZ": 60
+    },
+    {
+      "tiltX": 0,
+      "tiltZ": 60
+    },
+    {
+      "tiltX": 0,
+      "tiltZ": 60
+    },
+    {
+      "tiltX": 0,
+      "tiltZ": 60
+    },
+    {
+      "tiltX": 0,
+      "tiltZ": 60
+    },
+    {
+      "tiltX": 0,
+      "tiltZ": 60
+    },
+    {
+      "tiltX": 0,
+      "tiltZ": 60
+    },
+    {
+      "tiltX": 0,
+      "tiltZ": 60
+    },
+    {
+      "tiltX": 0,
+      "tiltZ": 60
+    },
+    {
+      "tiltX": 0,
+      "tiltZ": 60
+    },
+    {
+      "tiltX": 0,
+      "tiltZ": 60
+    },
+    {
+      "tiltX": 0,
+      "tiltZ": 60
+    },
+    {
+      "tiltX": 0,
+      "tiltZ": 60
+    },
+    {
+      "tiltX": 0,
+      "tiltZ": 60
+    },
+    {
+      "tiltX": 0,
+      "tiltZ": 60
+    },
+    {
+      "tiltX": 0,
+      "tiltZ": 60
+    },
+    {
+      "tiltX": 0,
+      "tiltZ": 60
+    },
+    {
+      "tiltX": 0,
+      "tiltZ": 60
+    },
+    {
+      "tiltX": 0,
+      "tiltZ": 60
+    },
+    {
+      "tiltX": 0,
+      "tiltZ": 60
+    },
+    {
+      "tiltX": 0,
+      "tiltZ": 60
+    },
+    {
+      "tiltX": 0,
+      "tiltZ": 60
+    },
+    {
+      "tiltX": 0,
+      "tiltZ": 60
+    },
+    {
+      "tiltX": 0,
+      "tiltZ": 60
+    },
+    {
+      "tiltX": 0,
+      "tiltZ": 60
+    },
+    {
+      "tiltX": 0,
+      "tiltZ": 60
+    },
+    {
+      "tiltX": 0,
+      "tiltZ": 60
+    },
+    {
+      "tiltX": 0,
+      "tiltZ": 60
+    },
+    {
+      "tiltX": 0,
+      "tiltZ": 60
+    },
+    {
+      "tiltX": 0,
+      "tiltZ": 60
+    },
+    {
+      "tiltX": 0,
+      "tiltZ": 60
+    },
+    {
+      "tiltX": 0,
+      "tiltZ": 60
+    },
+    {
+      "tiltX": 0,
+      "tiltZ": 60
+    },
+    {
+      "tiltX": 120,
+      "tiltZ": 10
+    },
+    {
+      "tiltX": 120,
+      "tiltZ": 10
+    },
+    {
+      "tiltX": 120,
+      "tiltZ": 10
+    },
+    {
+      "tiltX": 120,
+      "tiltZ": 10
+    },
+    {
+      "tiltX": 120,
+      "tiltZ": 10
+    },
+    {
+      "tiltX": 120,
+      "tiltZ": 10
+    },
+    {
+      "tiltX": 120,
+      "tiltZ": 10
+    },
+    {
+      "tiltX": 120,
+      "tiltZ": 10
+    },
+    {
+      "tiltX": 120,
+      "tiltZ": 10
+    },
+    {
+      "tiltX": 120,
+      "tiltZ": 10
+    },
+    {
+      "tiltX": 120,
+      "tiltZ": 10
+    },
+    {
+      "tiltX": 120,
+      "tiltZ": 10
+    },
+    {
+      "tiltX": 120,
+      "tiltZ": 10
+    },
+    {
+      "tiltX": 120,
+      "tiltZ": 10
+    },
+    {
+      "tiltX": 120,
+      "tiltZ": 10
+    },
+    {
+      "tiltX": 120,
+      "tiltZ": 10
+    },
+    {
+      "tiltX": 120,
+      "tiltZ": 10
+    },
+    {
+      "tiltX": 120,
+      "tiltZ": 10
+    },
+    {
+      "tiltX": 120,
+      "tiltZ": 10
+    },
+    {
+      "tiltX": 120,
+      "tiltZ": 10
+    },
+    {
+      "tiltX": 120,
+      "tiltZ": 10
+    },
+    {
+      "tiltX": 120,
+      "tiltZ": 10
+    },
+    {
+      "tiltX": 120,
+      "tiltZ": 10
+    },
+    {
+      "tiltX": 120,
+      "tiltZ": 10
+    },
+    {
+      "tiltX": 120,
+      "tiltZ": 10
+    },
+    {
+      "tiltX": 120,
+      "tiltZ": 10
+    },
+    {
+      "tiltX": 120,
+      "tiltZ": 10
+    },
+    {
+      "tiltX": 120,
+      "tiltZ": 10
+    },
+    {
+      "tiltX": 120,
+      "tiltZ": 10
+    },
+    {
+      "tiltX": 120,
+      "tiltZ": 10
+    },
+    {
+      "tiltX": 120,
+      "tiltZ": 10
+    },
+    {
+      "tiltX": 120,
+      "tiltZ": 10
+    },
+    {
+      "tiltX": 120,
+      "tiltZ": 10
+    },
+    {
+      "tiltX": 120,
+      "tiltZ": 10
+    },
+    {
+      "tiltX": 120,
+      "tiltZ": 10
+    },
+    {
+      "tiltX": 120,
+      "tiltZ": 10
+    },
+    {
+      "tiltX": 120,
+      "tiltZ": 10
+    },
+    {
+      "tiltX": 120,
+      "tiltZ": 10
+    },
+    {
+      "tiltX": 120,
+      "tiltZ": 10
+    },
+    {
+      "tiltX": 120,
+      "tiltZ": 10
+    },
+    {
+      "tiltX": 120,
+      "tiltZ": 10
+    },
+    {
+      "tiltX": 120,
+      "tiltZ": 10
+    },
+    {
+      "tiltX": 120,
+      "tiltZ": 10
+    },
+    {
+      "tiltX": 120,
+      "tiltZ": 10
+    },
+    {
+      "tiltX": 120,
+      "tiltZ": 10
+    },
+    {
+      "tiltX": 120,
+      "tiltZ": 10
+    },
+    {
+      "tiltX": 120,
+      "tiltZ": 10
+    },
+    {
+      "tiltX": 120,
+      "tiltZ": 10
+    },
+    {
+      "tiltX": 120,
+      "tiltZ": 10
+    },
+    {
+      "tiltX": 120,
+      "tiltZ": 10
+    },
+    {
+      "tiltX": 120,
+      "tiltZ": 10
+    },
+    {
+      "tiltX": 120,
+      "tiltZ": 10
+    },
+    {
+      "tiltX": 120,
+      "tiltZ": 10
+    },
+    {
+      "tiltX": 120,
+      "tiltZ": 10
+    },
+    {
+      "tiltX": 120,
+      "tiltZ": 10
+    },
+    {
+      "tiltX": 120,
+      "tiltZ": 10
+    },
+    {
+      "tiltX": 120,
+      "tiltZ": 10
+    },
+    {
+      "tiltX": 120,
+      "tiltZ": 10
+    },
+    {
+      "tiltX": 120,
+      "tiltZ": 10
+    },
+    {
+      "tiltX": 120,
+      "tiltZ": 10
+    },
+    {
+      "tiltX": 120,
+      "tiltZ": 10
+    },
+    {
+      "tiltX": 120,
+      "tiltZ": 10
+    },
+    {
+      "tiltX": 120,
+      "tiltZ": 10
+    },
+    {
+      "tiltX": 120,
+      "tiltZ": 10
+    },
+    {
+      "tiltX": 120,
+      "tiltZ": 10
+    },
+    {
+      "tiltX": 120,
+      "tiltZ": 10
+    },
+    {
+      "tiltX": 120,
+      "tiltZ": 10
+    },
+    {
+      "tiltX": 120,
+      "tiltZ": 10
+    },
+    {
+      "tiltX": 120,
+      "tiltZ": 10
+    },
+    {
+      "tiltX": 120,
+      "tiltZ": 10
+    },
+    {
+      "tiltX": 120,
+      "tiltZ": 10
+    },
+    {
+      "tiltX": 120,
+      "tiltZ": 10
+    },
+    {
+      "tiltX": 120,
+      "tiltZ": 10
+    },
+    {
+      "tiltX": 120,
+      "tiltZ": 10
+    },
+    {
+      "tiltX": 120,
+      "tiltZ": 10
+    },
+    {
+      "tiltX": 120,
+      "tiltZ": 10
+    },
+    {
+      "tiltX": 120,
+      "tiltZ": 10
+    },
+    {
+      "tiltX": 120,
+      "tiltZ": 10
+    },
+    {
+      "tiltX": 120,
+      "tiltZ": 10
+    },
+    {
+      "tiltX": 120,
+      "tiltZ": 10
+    },
+    {
+      "tiltX": 120,
+      "tiltZ": 10
+    },
+    {
+      "tiltX": 120,
+      "tiltZ": 10
+    },
+    {
+      "tiltX": 120,
+      "tiltZ": 10
+    },
+    {
+      "tiltX": 120,
+      "tiltZ": 10
+    },
+    {
+      "tiltX": 120,
+      "tiltZ": 10
+    },
+    {
+      "tiltX": 120,
+      "tiltZ": 10
+    },
+    {
+      "tiltX": 120,
+      "tiltZ": 10
+    },
+    {
+      "tiltX": 120,
+      "tiltZ": 10
+    },
+    {
+      "tiltX": 120,
+      "tiltZ": 10
+    },
+    {
+      "tiltX": 120,
+      "tiltZ": 10
+    },
+    {
+      "tiltX": 120,
+      "tiltZ": 10
+    },
+    {
+      "tiltX": 120,
+      "tiltZ": 10
+    },
+    {
+      "tiltX": 120,
+      "tiltZ": 10
+    },
+    {
+      "tiltX": 120,
+      "tiltZ": 10
+    },
+    {
+      "tiltX": 120,
+      "tiltZ": 10
+    },
+    {
+      "tiltX": -122,
+      "tiltZ": 55
+    },
+    {
+      "tiltX": -124,
+      "tiltZ": 55
+    },
+    {
+      "tiltX": -125,
+      "tiltZ": 55
+    },
+    {
+      "tiltX": -126,
+      "tiltZ": 55
+    },
+    {
+      "tiltX": -126,
+      "tiltZ": 55
+    },
+    {
+      "tiltX": -127,
+      "tiltZ": 55
+    },
+    {
+      "tiltX": -127,
+      "tiltZ": 55
+    },
+    {
+      "tiltX": -127,
+      "tiltZ": 55
+    },
+    {
+      "tiltX": -127,
+      "tiltZ": 55
+    },
+    {
+      "tiltX": -127,
+      "tiltZ": 55
+    },
+    {
+      "tiltX": -127,
+      "tiltZ": 55
+    },
+    {
+      "tiltX": -127,
+      "tiltZ": 55
+    },
+    {
+      "tiltX": -127,
+      "tiltZ": 55
+    },
+    {
+      "tiltX": -127,
+      "tiltZ": 55
+    },
+    {
+      "tiltX": -127,
+      "tiltZ": 55
+    },
+    {
+      "tiltX": -127,
+      "tiltZ": 55
+    },
+    {
+      "tiltX": -127,
+      "tiltZ": 55
+    },
+    {
+      "tiltX": -127,
+      "tiltZ": 55
+    },
+    {
+      "tiltX": -127,
+      "tiltZ": 55
+    },
+    {
+      "tiltX": -127,
+      "tiltZ": 55
+    },
+    {
+      "tiltX": -127,
+      "tiltZ": 55
+    },
+    {
+      "tiltX": -127,
+      "tiltZ": 55
+    },
+    {
+      "tiltX": -127,
+      "tiltZ": 55
+    },
+    {
+      "tiltX": -127,
+      "tiltZ": 55
+    },
+    {
+      "tiltX": -127,
+      "tiltZ": 55
+    },
+    {
+      "tiltX": -127,
+      "tiltZ": 55
+    },
+    {
+      "tiltX": -127,
+      "tiltZ": 55
+    },
+    {
+      "tiltX": -127,
+      "tiltZ": 55
+    },
+    {
+      "tiltX": -127,
+      "tiltZ": 55
+    },
+    {
+      "tiltX": -127,
+      "tiltZ": 55
+    },
+    {
+      "tiltX": -127,
+      "tiltZ": 55
+    },
+    {
+      "tiltX": -127,
+      "tiltZ": 55
+    },
+    {
+      "tiltX": -127,
+      "tiltZ": 55
+    },
+    {
+      "tiltX": -127,
+      "tiltZ": 55
+    },
+    {
+      "tiltX": -127,
+      "tiltZ": 55
+    },
+    {
+      "tiltX": -127,
+      "tiltZ": 55
+    },
+    {
+      "tiltX": -127,
+      "tiltZ": 55
+    },
+    {
+      "tiltX": -127,
+      "tiltZ": 55
+    },
+    {
+      "tiltX": -126,
+      "tiltZ": 55
+    },
+    {
+      "tiltX": -127,
+      "tiltZ": 55
+    },
+    {
+      "tiltX": -127,
+      "tiltZ": 55
+    },
+    {
+      "tiltX": -127,
+      "tiltZ": 55
+    },
+    {
+      "tiltX": -127,
+      "tiltZ": 55
+    },
+    {
+      "tiltX": -127,
+      "tiltZ": 55
+    },
+    {
+      "tiltX": -127,
+      "tiltZ": 55
+    },
+    {
+      "tiltX": -127,
+      "tiltZ": 55
+    },
+    {
+      "tiltX": -127,
+      "tiltZ": 55
+    },
+    {
+      "tiltX": -127,
+      "tiltZ": 55
+    },
+    {
+      "tiltX": -127,
+      "tiltZ": 55
+    },
+    {
+      "tiltX": -127,
+      "tiltZ": 55
+    },
+    {
+      "tiltX": -127,
+      "tiltZ": 55
+    },
+    {
+      "tiltX": -127,
+      "tiltZ": 55
+    },
+    {
+      "tiltX": -127,
+      "tiltZ": 55
+    },
+    {
+      "tiltX": -126,
+      "tiltZ": 55
+    },
+    {
+      "tiltX": -124,
+      "tiltZ": 55
+    },
+    {
+      "tiltX": -122,
+      "tiltZ": 55
+    },
+    {
+      "tiltX": -120,
+      "tiltZ": 55
+    },
+    {
+      "tiltX": -119,
+      "tiltZ": 55
+    },
+    {
+      "tiltX": -117,
+      "tiltZ": 55
+    },
+    {
+      "tiltX": -115,
+      "tiltZ": 55
+    },
+    {
+      "tiltX": -113,
+      "tiltZ": 55
+    },
+    {
+      "tiltX": -111,
+      "tiltZ": 55
+    },
+    {
+      "tiltX": -109,
+      "tiltZ": 55
+    },
+    {
+      "tiltX": -108,
+      "tiltZ": 55
+    },
+    {
+      "tiltX": -107,
+      "tiltZ": 55
+    },
+    {
+      "tiltX": -106,
+      "tiltZ": 55
+    },
+    {
+      "tiltX": -106,
+      "tiltZ": 55
+    },
+    {
+      "tiltX": -105,
+      "tiltZ": 55
+    },
+    {
+      "tiltX": -105,
+      "tiltZ": 55
+    },
+    {
+      "tiltX": -105,
+      "tiltZ": 55
+    },
+    {
+      "tiltX": -105,
+      "tiltZ": 55
+    },
+    {
+      "tiltX": -106,
+      "tiltZ": 55
+    },
+    {
+      "tiltX": -106,
+      "tiltZ": 55
+    },
+    {
+      "tiltX": -107,
+      "tiltZ": 55
+    },
+    {
+      "tiltX": -108,
+      "tiltZ": 55
+    },
+    {
+      "tiltX": -109,
+      "tiltZ": 55
+    },
+    {
+      "tiltX": -110,
+      "tiltZ": 55
+    },
+    {
+      "tiltX": -111,
+      "tiltZ": 55
+    },
+    {
+      "tiltX": -112,
+      "tiltZ": 55
+    },
+    {
+      "tiltX": -113,
+      "tiltZ": 55
+    },
+    {
+      "tiltX": -114,
+      "tiltZ": 55
+    },
+    {
+      "tiltX": -115,
+      "tiltZ": 55
+    },
+    {
+      "tiltX": -116,
+      "tiltZ": 55
+    },
+    {
+      "tiltX": -116,
+      "tiltZ": 55
+    },
+    {
+      "tiltX": -117,
+      "tiltZ": 55
+    },
+    {
+      "tiltX": -117,
+      "tiltZ": 55
+    },
+    {
+      "tiltX": -117,
+      "tiltZ": 55
+    },
+    {
+      "tiltX": -116,
+      "tiltZ": 55
+    },
+    {
+      "tiltX": -114,
+      "tiltZ": 55
+    },
+    {
+      "tiltX": -110,
+      "tiltZ": 55
+    },
+    {
+      "tiltX": -106,
+      "tiltZ": 55
+    },
+    {
+      "tiltX": -103,
+      "tiltZ": 55
+    },
+    {
+      "tiltX": -99,
+      "tiltZ": 55
+    },
+    {
+      "tiltX": -95,
+      "tiltZ": 55
+    },
+    {
+      "tiltX": 27,
+      "tiltZ": 105
+    },
+    {
+      "tiltX": 27,
+      "tiltZ": 101
+    },
+    {
+      "tiltX": 27,
+      "tiltZ": 96
+    },
+    {
+      "tiltX": 26,
+      "tiltZ": 92
+    },
+    {
+      "tiltX": 26,
+      "tiltZ": 88
+    },
+    {
+      "tiltX": 25,
+      "tiltZ": 84
+    },
+    {
+      "tiltX": 25,
+      "tiltZ": 79
+    },
+    {
+      "tiltX": 25,
+      "tiltZ": 75
+    }
+  ]
+}

@@ -90,18 +90,18 @@ export const LEVEL_1: LevelDefinition = {
     },
     {
       type: 'box',
-      halfExtents: [2.2, 0.25, 2.2],
-      position: [6.5, -0.6, 15.0],
+      halfExtents: [2.5, 0.25, 2.5],
+      position: [7.5, -0.6, 15.0],
       friction: 0.4,
       restitution: 0.2,
     },
 
-    // Bumper near the corner apex
+    // Bumper near the corner inner apex
     {
       type: 'cylinder',
       halfHeight: 0.4,
       radius: 0.6,
-      position: [4.5, 0.0, 16.5],
+      position: [4.5, 0.0, 12.6],
       restitution: 1.8,
       friction: 0.1,
       isBumper: true,
@@ -172,8 +172,8 @@ export const LEVEL_1: LevelDefinition = {
     {
       id: 'vis-corner-2',
       type: 'corner',
-      position: [6.5, -0.6, 15.0],
-      scale: [4.4, 0.5, 4.4],
+      position: [7.5, -0.6, 15.0],
+      scale: [5.0, 0.5, 5.0],
       color: '#818cf8',
     },
     {
@@ -208,7 +208,7 @@ export const LEVEL_1: LevelDefinition = {
     {
       id: 'vis-bumper-3',
       type: 'bumper',
-      position: [4.5, 0.0, 16.5],
+      position: [4.5, 0.0, 12.6],
       scale: [1.2, 0.8, 1.2],
       color: '#f43f5e',
     },

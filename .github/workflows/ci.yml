@@ -1,0 +1,55 @@
+name: CI
+
+on:
+  push:
+    branches: [main, master]
+  pull_request:
+    branches: [main, master]
+
+jobs:
+  test:
+    name: Determinism & Full-Stack Tests
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v4
+        with:
+          version: 12.10.1
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Build shared and sim packages
+        run: |
+          pnpm --filter @ghostroll/shared build
+          pnpm --filter @ghostroll/sim build
+          pnpm --filter @ghostroll/server build
+          pnpm --filter @ghostroll/web build
+
+      - name: Run unit & server verification tests
+        run: pnpm test
+
+      - name: Install Playwright browsers with system dependencies
+        run: pnpm exec playwright install --with-deps
+
+      - name: Start backend server in background
+        run: |
+          pnpm --filter @ghostroll/server start &
+          sleep 2
+
+      - name: Start web frontend in background
+        run: |
+          pnpm --filter @ghostroll/web dev --port 5173 &
+          sleep 3
+
+      - name: Run cross-browser determinism suite (Chromium, Firefox, WebKit)
+        run: pnpm test:e2e

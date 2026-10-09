@@ -2,14 +2,17 @@
   "name": "ghostroll",
   "private": true,
   "description": "Daily 3D marble time-trial game with deterministic replays and ghost racing",
-  "packageManager": "pnpm@12.10.1",
+  "type": "module",
   "scripts": {
     "dev": "pnpm --filter @ghostroll/web dev",
-    "build": "pnpm --filter @ghostroll/sim build && pnpm --filter @ghostroll/shared build && pnpm --filter @ghostroll/web build",
-    "test": "pnpm --filter @ghostroll/sim test",
+    "dev:server": "pnpm --filter @ghostroll/server dev",
+    "build": "pnpm --filter @ghostroll/shared build && pnpm --filter @ghostroll/sim build && pnpm --filter @ghostroll/server build && pnpm --filter @ghostroll/web build",
+    "test": "pnpm --filter @ghostroll/sim test && pnpm --filter @ghostroll/server test",
+    "test:e2e": "playwright test",
     "lint": "echo 'No linter configured yet'"
   },
   "devDependencies": {
+    "@playwright/test": "^1.64.0",
     "typescript": "^5.8.2"
   }
 }
