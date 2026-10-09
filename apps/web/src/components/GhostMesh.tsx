@@ -2,22 +2,38 @@ import React, { useRef } from 'react';
 import * as THREE from 'three';
 import { useFrame } from '@react-three/fiber';
 import { BALL_RADIUS } from '@ghostroll/shared';
+import { LiveRenderState } from '../types/render.js';
 
 interface GhostMeshProps {
-  position: [number, number, number] | null;
+  liveRenderRef?: React.RefObject<LiveRenderState>;
+  position?: [number, number, number] | null;
   name?: string;
 }
 
-export const GhostMesh: React.FC<GhostMeshProps> = ({ position, name = 'Personal Best' }) => {
+export const GhostMesh: React.FC<GhostMeshProps> = ({
+  liveRenderRef,
+  position,
+  name = 'Personal Best',
+}) => {
   const meshRef = useRef<THREE.Mesh>(null);
   const ringRef = useRef<THREE.Mesh>(null);
 
   useFrame((state, delta) => {
-    if (!position || !meshRef.current) return;
-    meshRef.current.position.set(position[0], position[1], position[2]);
+    const activePos = liveRenderRef?.current ? liveRenderRef.current.ghostPos : position;
+    if (!activePos) {
+      if (meshRef.current) meshRef.current.visible = false;
+      if (ringRef.current) ringRef.current.visible = false;
+      return;
+    }
+
+    if (meshRef.current) {
+      meshRef.current.visible = true;
+      meshRef.current.position.set(activePos[0], activePos[1], activePos[2]);
+    }
 
     if (ringRef.current) {
-      ringRef.current.position.set(position[0], position[1], position[2]);
+      ringRef.current.visible = true;
+      ringRef.current.position.set(activePos[0], activePos[1], activePos[2]);
       ringRef.current.rotation.y += delta * 2;
       ringRef.current.rotation.x = Math.sin(state.clock.elapsedTime * 3) * 0.2;
     }

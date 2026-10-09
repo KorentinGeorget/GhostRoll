@@ -2,10 +2,12 @@ import React, { useRef, useMemo } from 'react';
 import * as THREE from 'three';
 import { useFrame } from '@react-three/fiber';
 import { BALL_RADIUS, ColliderDef } from '@ghostroll/shared';
+import { LiveRenderState } from '../types/render.js';
 
 interface BallMeshProps {
-  position: [number, number, number];
-  velocity: [number, number, number];
+  liveRenderRef?: React.RefObject<LiveRenderState>;
+  position?: [number, number, number];
+  velocity?: [number, number, number];
   colliders?: ColliderDef[];
 }
 
@@ -44,7 +46,12 @@ function findGroundY(x: number, y: number, z: number, colliders?: ColliderDef[])
   return highest > -900 ? highest : null;
 }
 
-export const BallMesh: React.FC<BallMeshProps> = ({ position, velocity, colliders }) => {
+export const BallMesh: React.FC<BallMeshProps> = ({
+  liveRenderRef,
+  position = [0, 1, 0],
+  velocity = [0, 0, 0],
+  colliders,
+}) => {
   const meshRef = useRef<THREE.Mesh>(null);
   const shadowMeshRef = useRef<THREE.Mesh>(null);
   const tetherMeshRef = useRef<THREE.Mesh>(null);
@@ -57,17 +64,32 @@ export const BallMesh: React.FC<BallMeshProps> = ({ position, velocity, collider
   }, []);
 
   useFrame((_, delta) => {
-    const px = position[0];
-    const py = position[1];
-    const pz = position[2];
+    let px: number;
+    let py: number;
+    let pz: number;
+    let vx: number;
+    let vz: number;
+
+    const live = liveRenderRef?.current;
+    if (live) {
+      const a = live.alpha;
+      px = live.prevPos[0] * (1 - a) + live.currPos[0] * a;
+      py = live.prevPos[1] * (1 - a) + live.currPos[1] * a;
+      pz = live.prevPos[2] * (1 - a) + live.currPos[2] * a;
+      vx = live.velocity[0];
+      vz = live.velocity[2];
+    } else {
+      px = position[0];
+      py = position[1];
+      pz = position[2];
+      vx = velocity[0];
+      vz = velocity[2];
+    }
 
     if (meshRef.current) {
       meshRef.current.position.set(px, py, pz);
 
       // Roll ball according to linear velocity: dtheta = (v / R) * dt
-      const vx = velocity[0];
-      const vz = velocity[2];
-
       meshRef.current.rotation.z -= (vx / BALL_RADIUS) * delta;
       meshRef.current.rotation.x += (vz / BALL_RADIUS) * delta;
     }

@@ -26,6 +26,7 @@ import { ProfileModal } from './components/ProfileModal.js';
 import { useControls } from './hooks/useControls.js';
 import { Language, getInitialLanguage } from './i18n/translations.js';
 import { soundFX } from './utils/audio.js';
+import { LiveRenderState } from './types/render.js';
 
 import {
   getStoredPB,
@@ -100,10 +101,14 @@ export const App: React.FC = () => {
   const [showGhost, setShowGhost] = useState(true);
   const [isNewPB, setIsNewPB] = useState(false);
 
-  // Active rendering interpolated values
-  const [renderPos, setRenderPos] = useState<[number, number, number]>(level.spawn);
-  const [renderVel, setRenderVel] = useState<[number, number, number]>([0, 0, 0]);
-  const [ghostRenderPos, setGhostRenderPos] = useState<[number, number, number] | null>(null);
+  // Live decoupled rendering ref with sub-frame alpha interpolation
+  const liveRenderRef = useRef<LiveRenderState>({
+    prevPos: level.spawn,
+    currPos: level.spawn,
+    velocity: [0, 0, 0],
+    alpha: 0,
+    ghostPos: null,
+  });
 
   // Controls hook (keyboard, touch joystick & mobile gyroscope)
   const {
@@ -148,10 +153,12 @@ export const App: React.FC = () => {
     setSubmitStatus('idle');
     setSubmitMessage('');
     const initial = simRef.current.getState();
+    liveRenderRef.current.prevPos = initial.ball.position;
+    liveRenderRef.current.currPos = initial.ball.position;
+    liveRenderRef.current.velocity = initial.ball.velocity;
+    liveRenderRef.current.alpha = 0;
+    liveRenderRef.current.ghostPos = null;
     setSimState(initial);
-    setRenderPos(initial.ball.position);
-    setRenderVel(initial.ball.velocity);
-    setGhostRenderPos(null);
   }, [resetTilt]);
 
 
@@ -242,9 +249,13 @@ export const App: React.FC = () => {
       if (!mounted) return;
       const sim = createSimulation(level);
       simRef.current = sim;
-      setSimState(sim.getState());
-      setRenderPos(sim.getState().ball.position);
-      setRenderVel(sim.getState().ball.velocity);
+      const initial = sim.getState();
+      liveRenderRef.current.prevPos = initial.ball.position;
+      liveRenderRef.current.currPos = initial.ball.position;
+      liveRenderRef.current.velocity = initial.ball.velocity;
+      liveRenderRef.current.alpha = 0;
+      liveRenderRef.current.ghostPos = null;
+      setSimState(initial);
       setPhysicsReady(true);
       handleRestart();
     });
@@ -295,6 +306,13 @@ export const App: React.FC = () => {
       // Step simulation for all accumulated 60Hz ticks
       while (accumulator >= FIXED_DT) {
         if (state.status !== 'won' && state.status !== 'dead') {
+          // Store previous position before tick step for sub-frame interpolation
+          liveRenderRef.current.prevPos = [
+            state.ball.position[0],
+            state.ball.position[1],
+            state.ball.position[2],
+          ];
+
           const input = getInput();
 
           if (input.jump) {
@@ -313,6 +331,18 @@ export const App: React.FC = () => {
           }
 
           state = newState;
+
+          // Update current position and velocity after tick step
+          liveRenderRef.current.currPos = [
+            state.ball.position[0],
+            state.ball.position[1],
+            state.ball.position[2],
+          ];
+          liveRenderRef.current.velocity = [
+            state.ball.velocity[0],
+            state.ball.velocity[1],
+            state.ball.velocity[2],
+          ];
 
           // Sample ghost trajectory at 20Hz (every 3 ticks)
           if (state.tick % 3 === 0) {
@@ -386,11 +416,11 @@ export const App: React.FC = () => {
         accumulator -= FIXED_DT;
       }
 
-      // Update positions for R3F Canvas
-      setRenderPos(state.ball.position);
-      setRenderVel(state.ball.velocity);
+      // Compute sub-tick interpolation alpha in [0, 1]
+      const alpha = Math.min(1, Math.max(0, accumulator / FIXED_DT));
+      liveRenderRef.current.alpha = alpha;
 
-      // Interpolate Ghost (from either PB or selected Leaderboard runner)
+      // Sub-tick continuous ghost interpolation
       if (showGhost) {
         let activeSamples: GhostSample[] | null = null;
         if (activeGhostSource === 'leaderboard' && selectedLeaderboardGhost?.ghostSamples) {
@@ -400,13 +430,15 @@ export const App: React.FC = () => {
         }
 
         if (activeSamples) {
-          const ghostP = sampleGhostPosition(activeSamples, state.tick);
-          setGhostRenderPos(ghostP);
+          liveRenderRef.current.ghostPos = sampleGhostPosition(
+            activeSamples,
+            state.tick + alpha
+          );
         } else {
-          setGhostRenderPos(null);
+          liveRenderRef.current.ghostPos = null;
         }
       } else {
-        setGhostRenderPos(null);
+        liveRenderRef.current.ghostPos = null;
       }
 
       // Sync React HUD state
@@ -440,7 +472,9 @@ export const App: React.FC = () => {
   }
 
   const speedMagnitude = Math.sqrt(
-    renderVel[0] * renderVel[0] + renderVel[1] * renderVel[1] + renderVel[2] * renderVel[2]
+    simState.ball.velocity[0] ** 2 +
+    simState.ball.velocity[1] ** 2 +
+    simState.ball.velocity[2] ** 2
   );
 
   const activeGhostName =
@@ -456,9 +490,7 @@ export const App: React.FC = () => {
       <CanvasView
         level={level}
         palette={palette}
-        ballPos={renderPos}
-        ballVel={renderVel}
-        ghostPos={ghostRenderPos}
+        liveRenderRef={liveRenderRef}
         tilt={rawTilt}
       />
 
