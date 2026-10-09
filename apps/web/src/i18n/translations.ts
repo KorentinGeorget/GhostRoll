@@ -49,6 +49,15 @@ export const TRANSLATIONS = {
     baselineDesc: 'Hand-crafted 4-pad tutorial track with bumpers & narrow bridges',
     selected: 'Selected',
     close: 'Close',
+    randomTrack: 'Random Track',
+    challengeFriend: 'Challenge a Friend',
+    challengeFriendDesc: 'Play on any custom seed code and share it with friends to race together!',
+    enterSeed: 'Enter seed code (e.g. SPEED-99)...',
+    playSeed: 'Launch Track',
+    copyLink: 'Copy Challenge Link',
+    linkCopied: 'Challenge link copied!',
+    generateRandom: 'Roll Random Track',
+    hardTrack: 'Hard • Void Gaps & Jump Pads',
 
     // Profile & Account Sync Modal
     profileTitle: 'Player Profile & Device Sync',
@@ -131,6 +140,15 @@ export const TRANSLATIONS = {
     baselineDesc: 'Tracé tutoriel avec bumpers et ponts étroits',
     selected: 'Sélectionné',
     close: 'Fermer',
+    randomTrack: 'Niveau Aléatoire',
+    challengeFriend: 'Défier un Ami / Code Salon',
+    challengeFriendDesc: 'Jouez sur n’importe quelle graine personnalisée et partagez le lien pour faire la course ensemble !',
+    enterSeed: 'Entrez un code de graine (ex: SOIRÉE-POTES)...',
+    playSeed: 'Lancer la piste',
+    copyLink: 'Copier le lien du défi',
+    linkCopied: 'Lien du défi copié !',
+    generateRandom: 'Générer une piste aléatoire',
+    hardTrack: 'Difficile • Sauts du vide & Tremplins',
 
     // Profile & Account Sync Modal
     profileTitle: 'Profil Joueur & Synchronisation',

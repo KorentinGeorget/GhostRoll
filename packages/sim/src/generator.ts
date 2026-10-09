@@ -17,7 +17,12 @@ interface Heading {
   dz: number;
 }
 
-export function generateDailyLevel(seed: string): GeneratedDailyLevel {
+export interface GenerateOptions {
+  difficulty?: 'normal' | 'hard' | 'extreme';
+  segments?: number;
+}
+
+export function generateDailyLevel(seed: string, options?: GenerateOptions): GeneratedDailyLevel {
   const rng = new SeededRNG(`daily-level-${seed}`);
   const palette = generateDailyPalette(seed);
 
@@ -29,6 +34,7 @@ export function generateDailyLevel(seed: string): GeneratedDailyLevel {
   let curY = 1.0;
   let curZ = 2.5; // Leading edge of the 5x5 start platform
   let heading: Heading = { dx: 0, dz: 1 }; // facing forward along +Z
+  let lowestY = curY;
 
   // 1. Start Platform (centered at [0, curY, 0])
   colliders.push({
@@ -71,20 +77,24 @@ export function generateDailyLevel(seed: string): GeneratedDailyLevel {
     color: palette.trackPrimary,
   });
 
-  const numSegments = rng.nextInt(7, 9);
+  const baseSegments = options?.difficulty === 'extreme' ? rng.nextInt(13, 16) : options?.difficulty === 'hard' ? rng.nextInt(11, 14) : rng.nextInt(9, 12);
+  const numSegments = options?.segments ?? baseSegments;
   let prevPieceType = 'start';
   let tileIndex = 1;
 
   for (let s = 0; s < numSegments; s++) {
     // Choose segment type
-    const possibleTypes: Array<'straight' | 'ramp' | 'corner_right' | 'corner_left' | 'bridge'> = [
-      'straight',
-      'ramp',
-      'bridge',
-    ];
+    let possibleTypes: Array<
+      'straight' | 'ramp' | 'corner_right' | 'corner_left' | 'bridge' | 'jump_gap' | 'chicane' | 'booster'
+    > = ['straight', 'ramp', 'bridge', 'jump_gap', 'booster'];
 
     if (prevPieceType !== 'corner_right' && prevPieceType !== 'corner_left') {
-      possibleTypes.push('corner_right', 'corner_left');
+      possibleTypes.push('corner_right', 'corner_left', 'chicane');
+    }
+
+    if (prevPieceType === 'jump_gap') {
+      // Must be straight or ramp after a jump gap to stabilize
+      possibleTypes = ['straight', 'ramp'];
     }
 
     const pieceType = rng.choice(possibleTypes);
@@ -226,6 +236,196 @@ export function generateDailyLevel(seed: string): GeneratedDailyLevel {
       curZ = cornerZ + heading.dz * 2.5;
       curY = cornerY;
       prevPieceType = pieceType;
+    } else if (pieceType === 'jump_gap') {
+      // Void jump: Launch ramp -> air gap -> landing pad with guide rails
+      const launchLength = 4.5;
+      const gapDistance = 4.0;
+      const landingLength = 6.0;
+      const dYLaunch = -0.2;
+      const dYGap = -0.6; // Landing is slightly lower than launch for a smooth parabolic landing
+      const dYLanding = -0.2;
+
+      // 1. Launch Ramp
+      const launchPosX = curX + heading.dx * (launchLength / 2);
+      const launchPosZ = curZ + heading.dz * (launchLength / 2);
+      const launchPosY = curY + dYLaunch / 2;
+      const hxLaunch = heading.dx !== 0 ? launchLength / 2 : 2.0;
+      const hzLaunch = heading.dz !== 0 ? launchLength / 2 : 2.0;
+
+      colliders.push({
+        type: 'box',
+        halfExtents: [hxLaunch, 0.25, hzLaunch],
+        position: [launchPosX, launchPosY, launchPosZ],
+        friction: 0.45,
+        restitution: 0.2,
+      });
+
+      visuals.push({
+        id: `vis-launch-${tileIndex++}`,
+        type: 'ramp',
+        position: [launchPosX, launchPosY, launchPosZ],
+        scale: [hxLaunch * 2, 0.5, hzLaunch * 2],
+        color: palette.trackSecondary,
+      });
+
+      // Launch Lip / Jump indicator bumper
+      const lipX = curX + heading.dx * (launchLength - 0.2);
+      const lipZ = curZ + heading.dz * (launchLength - 0.2);
+      visuals.push({
+        id: `vis-kicker-${tileIndex++}`,
+        type: 'bumper',
+        position: [lipX, launchPosY + 0.2, lipZ],
+        scale: [heading.dx !== 0 ? 0.3 : 3.8, 0.15, heading.dz !== 0 ? 0.3 : 3.8],
+        color: palette.bumper,
+      });
+
+      // 2. Void Gap (ball flies through empty space)
+      const afterGapX = curX + heading.dx * (launchLength + gapDistance);
+      const afterGapZ = curZ + heading.dz * (launchLength + gapDistance);
+      const afterGapY = curY + dYLaunch + dYGap;
+
+      // 3. Landing Platform (generously wide with safety rails)
+      const landingPosX = afterGapX + heading.dx * (landingLength / 2);
+      const landingPosZ = afterGapZ + heading.dz * (landingLength / 2);
+      const landingPosY = afterGapY + dYLanding / 2;
+      const hxLanding = heading.dx !== 0 ? landingLength / 2 : 2.6;
+      const hzLanding = heading.dz !== 0 ? landingLength / 2 : 2.6;
+
+      colliders.push({
+        type: 'box',
+        halfExtents: [hxLanding, 0.25, hzLanding],
+        position: [landingPosX, landingPosY, landingPosZ],
+        friction: 0.5,
+        restitution: 0.25,
+      });
+
+      // Side guide rails on landing pad
+      const perpX = -heading.dz;
+      const perpZ = heading.dx;
+      const railOffset = 2.45;
+      const railHalfL = landingLength / 2;
+      const railHx = heading.dx !== 0 ? railHalfL : 0.15;
+      const railHz = heading.dz !== 0 ? railHalfL : 0.15;
+
+      colliders.push(
+        {
+          type: 'box',
+          halfExtents: [railHx, 0.35, railHz],
+          position: [landingPosX + perpX * railOffset, landingPosY + 0.45, landingPosZ + perpZ * railOffset],
+          friction: 0.2,
+          restitution: 0.3,
+        },
+        {
+          type: 'box',
+          halfExtents: [railHx, 0.35, railHz],
+          position: [landingPosX - perpX * railOffset, landingPosY + 0.45, landingPosZ - perpZ * railOffset],
+          friction: 0.2,
+          restitution: 0.3,
+        }
+      );
+
+      visuals.push({
+        id: `vis-landing-${tileIndex++}`,
+        type: 'straight',
+        position: [landingPosX, landingPosY, landingPosZ],
+        scale: [hxLanding * 2, 0.5, hzLanding * 2],
+        color: palette.trackPrimary,
+      });
+
+      curX = afterGapX + heading.dx * landingLength;
+      curZ = afterGapZ + heading.dz * landingLength;
+      curY = afterGapY + dYLanding;
+      prevPieceType = 'jump_gap';
+    } else if (pieceType === 'chicane') {
+      // S-curve chicane with slalom bumper
+      const isRightFirst = rng.nextFloat() > 0.5;
+      const length = 7.5;
+      const dY = -0.25;
+      const perpX = -heading.dz;
+      const perpZ = heading.dx;
+      const jog = isRightFirst ? 1.8 : -1.8;
+
+      const posX = curX + heading.dx * (length / 2) + perpX * (jog / 2);
+      const posZ = curZ + heading.dz * (length / 2) + perpZ * (jog / 2);
+      const posY = curY + dY / 2;
+
+      const hx = heading.dx !== 0 ? length / 2 : 2.4;
+      const hz = heading.dz !== 0 ? length / 2 : 2.4;
+
+      colliders.push({
+        type: 'box',
+        halfExtents: [hx, 0.25, hz],
+        position: [posX, posY, posZ],
+        friction: 0.45,
+        restitution: 0.2,
+      });
+
+      visuals.push({
+        id: `vis-chicane-${tileIndex++}`,
+        type: 'straight',
+        position: [posX, posY, posZ],
+        scale: [hx * 2, 0.5, hz * 2],
+        color: palette.trackSecondary,
+      });
+
+      // Center bumper obstacle to navigate around
+      colliders.push({
+        type: 'cylinder',
+        halfHeight: 0.4,
+        radius: 0.45,
+        position: [posX, posY + 0.45, posZ],
+        restitution: 1.4,
+        friction: 0.1,
+        isBumper: true,
+      });
+
+      visuals.push({
+        id: `vis-bumper-${tileIndex++}`,
+        type: 'bumper',
+        position: [posX, posY + 0.45, posZ],
+        scale: [0.9, 0.8, 0.9],
+        color: palette.bumper,
+      });
+
+      curX += heading.dx * length + perpX * jog;
+      curZ += heading.dz * length + perpZ * jog;
+      curY += dY;
+      prevPieceType = 'chicane';
+    } else if (pieceType === 'booster') {
+      // High-speed low-friction booster strip
+      const length = 6.5;
+      const dY = -0.2;
+      const posX = curX + heading.dx * (length / 2);
+      const posZ = curZ + heading.dz * (length / 2);
+      const posY = curY + dY / 2;
+
+      const hx = heading.dx !== 0 ? length / 2 : 2.0;
+      const hz = heading.dz !== 0 ? length / 2 : 2.0;
+
+      colliders.push({
+        type: 'box',
+        halfExtents: [hx, 0.25, hz],
+        position: [posX, posY, posZ],
+        friction: 0.08,
+        restitution: 0.4,
+      });
+
+      visuals.push({
+        id: `vis-booster-${tileIndex++}`,
+        type: 'straight',
+        position: [posX, posY, posZ],
+        scale: [hx * 2, 0.5, hz * 2],
+        color: palette.bumper,
+      });
+
+      curX += heading.dx * length;
+      curZ += heading.dz * length;
+      curY += dY;
+      prevPieceType = 'booster';
+    }
+
+    if (curY < lowestY) {
+      lowestY = curY;
     }
   }
 
@@ -274,7 +474,7 @@ export function generateDailyLevel(seed: string): GeneratedDailyLevel {
       position: [goalX, goalY + 0.5, goalZ],
       radius: 2.2,
     },
-    deathY: goalY - 8.0,
+    deathY: Math.min(lowestY, goalY) - 10.0,
     colliders,
     visuals,
   };
