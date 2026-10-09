@@ -65,19 +65,19 @@ export const VirtualJoystick: React.FC<VirtualJoystickProps> = ({ onTiltChange }
         className="w-32 h-32 rounded-full glass-panel-elevated flex items-center justify-center relative touch-none select-none border border-white/20 shadow-2xl active:scale-95 transition-transform"
       >
         {/* Center rest ring */}
-        <div className="w-12 h-12 rounded-full border border-white/20 bg-white/5" />
+        <div className="w-12 h-12 rounded-full border border-white/10 bg-white/[0.03]" />
 
         {/* Floating thumb stick */}
         <div
           style={{
             transform: `translate(${stickPos.x}px, ${stickPos.y}px)`,
           }}
-          className="w-14 h-14 rounded-full bg-gradient-to-tr from-indigo-500 via-sky-400 to-cyan-300 shadow-xl shadow-sky-500/30 absolute pointer-events-none transition-transform duration-75 flex items-center justify-center border border-white/40"
+          className="w-14 h-14 rounded-full bg-zinc-200 text-zinc-900 shadow-lg absolute pointer-events-none transition-transform duration-75 flex items-center justify-center border border-white/60"
         >
-          <div className="w-4 h-4 rounded-full bg-white/80 shadow-sm" />
+          <div className="w-3.5 h-3.5 rounded-full bg-zinc-400/80 shadow-inner" />
         </div>
       </div>
-      <div className="text-center text-[10px] text-slate-300/80 mt-1.5 font-bold tracking-wider uppercase">Joystick</div>
+      <div className="text-center text-[10px] text-zinc-400 mt-1.5 font-bold tracking-wider uppercase font-mono">Joystick</div>
     </div>
   );
 };

@@ -7,8 +7,6 @@ import {
   Trophy,
   Eye,
   EyeOff,
-  Hash,
-  Zap,
   CheckCircle2,
   AlertTriangle,
   User as UserIcon,
@@ -20,6 +18,8 @@ import {
   Gamepad2,
   Volume2,
   VolumeX,
+  Gauge,
+  Flag,
 } from 'lucide-react';
 
 interface HUDProps {
@@ -82,7 +82,7 @@ export const HUD: React.FC<HUDProps> = ({
   onOpenProfile,
   submitStatus = 'idle',
   submitMessage,
-  activeGhostName = 'Personal Best',
+  activeGhostName: _activeGhostName,
   levelName,
   levelId: _levelId,
   dateStr,
@@ -100,8 +100,7 @@ export const HUD: React.FC<HUDProps> = ({
   const t = TRANSLATIONS[lang];
   const [copiedShare, setCopiedShare] = useState(false);
 
-  const speedKmh = speed * 3.6;
-  const speedNormalized = Math.min(100, (speedKmh / 80) * 100);
+  const speedKmh = Math.round(speed * 3.6);
 
   const handleShare = () => {
     const shareText = formatShareCard({
@@ -113,14 +112,14 @@ export const HUD: React.FC<HUDProps> = ({
       finalHash: stateHash,
       url:
         typeof window !== 'undefined'
-          ? `${window.location.origin}${_levelId ? `?seed=${encodeURIComponent(_levelId.replace(/^(daily-|seed-|custom-)/, ''))}` : ''}`
+          ? `${window.location.origin}${_levelId ? `?seed=${encodeURIComponent(_levelId.replace(/^(daily-|seed-|custom-|random-)/, ''))}` : ''}`
           : '',
     });
 
     if (navigator.clipboard) {
       navigator.clipboard.writeText(shareText).then(() => {
         setCopiedShare(true);
-        setTimeout(() => setCopiedShare(false), 3000);
+        setTimeout(() => setCopiedShare(false), 2500);
       });
     }
   };
@@ -128,243 +127,217 @@ export const HUD: React.FC<HUDProps> = ({
   return (
     <div className="absolute inset-0 pointer-events-none flex flex-col justify-between p-4 md:p-6 select-none overflow-hidden">
       {/* =========================================================================
-          TOP BAR: Spacious floating capsules (Left: Brand/Course | Right: Actions)
+          TOP NAVIGATION BAR
          ========================================================================= */}
-      <div className="flex items-start justify-between w-full pointer-events-auto gap-3">
-        {/* TOP LEFT: Brand & Course Capsule */}
-        <div className="flex items-center space-x-2">
-          <div className="glass-panel-elevated rounded-2xl px-3 sm:px-4 py-2.5 sm:py-2 flex items-center space-x-3 border border-white/10 shadow-xl">
-            <div className="flex items-center space-x-2">
-              <h1 className="text-sm sm:text-lg md:text-xl font-black tracking-wider bg-gradient-to-r from-cyan-400 via-sky-300 to-indigo-400 bg-clip-text text-transparent drop-shadow-[0_0_12px_rgba(56,189,248,0.5)]">
-                GHOSTROLL
-              </h1>
-              <span className="hidden sm:flex items-center space-x-1 text-[9px] uppercase font-black px-1.5 py-0.5 rounded-full bg-emerald-500/20 text-emerald-300 border border-emerald-500/30">
-                <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse" />
-                <span>v0.4</span>
-              </span>
-            </div>
+      <header className="flex items-start justify-between w-full pointer-events-auto gap-3">
+        {/* Left: Clean Brandmark + Track Quick-Pill */}
+        <div className="flex items-center space-x-2 sm:space-x-3">
+          <div className="glass-panel rounded-2xl px-3.5 py-2 flex items-center space-x-2.5">
+            <h1 className="text-sm sm:text-base font-extrabold tracking-widest text-white flex items-center space-x-2">
+              <span className="w-2 h-2 rounded-full bg-emerald-400 inline-block shadow-sm" />
+              <span>GHOSTROLL</span>
+            </h1>
 
-            <span className="text-white/20 hidden sm:inline">|</span>
+            <span className="text-white/15 hidden sm:inline">|</span>
 
-            {/* Course Selector Dropdown Button */}
+            {/* Course Selector Pill */}
             <button
               onClick={onOpenTrackSelector}
-              className="hidden sm:flex items-center space-x-1.5 text-xs text-slate-300 hover:text-white font-semibold transition group cursor-pointer"
+              className="hidden sm:flex items-center space-x-1.5 text-xs text-zinc-300 hover:text-white font-medium transition cursor-pointer group"
+              title={t.courseSelector}
             >
-              <span className="text-slate-400 hidden sm:inline">{t.track}:</span>
-              <span className="text-cyan-300 font-bold group-hover:text-cyan-200">{cleanName(levelName)}</span>
-              <ChevronDown className="w-3.5 h-3.5 text-slate-400 group-hover:translate-y-0.5 transition-transform" />
+              <span className="text-zinc-400 font-normal">{t.track}:</span>
+              <span className="font-semibold text-zinc-100 group-hover:text-white transition">
+                {cleanName(levelName)}
+              </span>
+              <ChevronDown className="w-3.5 h-3.5 text-zinc-400 group-hover:translate-y-0.5 transition-transform" />
             </button>
           </div>
         </div>
 
-        {/* TOP RIGHT: Player Profile & Quick Navigation Pills */}
-        <div className="flex items-center space-x-1.5 sm:space-x-2">
-          {/* User Profile Pill (Google or Guest) */}
+        {/* Right: Unified Action Buttons */}
+        <div className="flex items-center space-x-2">
+          {/* User Profile */}
           <button
             onClick={onOpenProfile}
-            className="glass-panel-elevated rounded-2xl px-2.5 sm:px-3.5 py-2 flex items-center space-x-2 text-xs font-bold text-slate-200 hover:text-white transition shadow-lg cursor-pointer border border-white/10 active:scale-95"
+            className="glass-pill px-3 py-2 rounded-xl flex items-center space-x-2 text-xs font-semibold text-zinc-200 hover:text-white transition cursor-pointer"
+            title={t.profile}
           >
             {userAvatarUrl ? (
               <img
                 src={userAvatarUrl}
                 alt={userDisplayName || 'Player'}
-                className="w-5 h-5 rounded-full ring-2 ring-emerald-400/60 shadow"
+                className="w-4 h-4 rounded-full ring-1 ring-white/30"
               />
             ) : (
-              <div className="w-5 h-5 rounded-full bg-indigo-500/25 border border-indigo-400/40 flex items-center justify-center text-cyan-300">
-                <UserIcon className="w-3 h-3" />
-              </div>
+              <UserIcon className="w-3.5 h-3.5 text-zinc-300" />
             )}
-            <span className="hidden sm:inline truncate max-w-[110px] md:max-w-[150px]">
+            <span className="hidden sm:inline truncate max-w-[120px]">
               {userDisplayName || t.profile}
             </span>
             {isGoogleLinked && (
-              <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 shadow-[0_0_6px_rgba(52,211,153,0.8)]" title="Google Account Connected" />
+              <span className="w-1.5 h-1.5 rounded-full bg-emerald-400" title="Google account linked" />
             )}
           </button>
 
           {/* Courses Browser */}
           <button
             onClick={onOpenTrackSelector}
-            className="glass-panel rounded-2xl px-3 py-2 flex items-center space-x-1.5 text-xs font-bold text-sky-300 hover:text-sky-200 transition shadow-md cursor-pointer border border-white/10 active:scale-95"
-            title={t.courses}
+            className="glass-pill px-3 py-2 rounded-xl flex items-center space-x-1.5 text-xs font-semibold text-zinc-200 hover:text-white transition cursor-pointer"
           >
-            <Compass className="w-4 h-4 text-sky-400" />
+            <Compass className="w-3.5 h-3.5 text-zinc-400" />
             <span className="hidden sm:inline">{t.courses}</span>
           </button>
 
-          {/* Leaderboard Button */}
+          {/* Leaderboard */}
           <button
             onClick={onOpenLeaderboard}
-            className="glass-panel rounded-2xl px-3 py-2 flex items-center space-x-1.5 text-xs font-bold text-amber-300 hover:text-amber-200 transition shadow-md cursor-pointer border border-white/10 active:scale-95"
-            title={t.leaderboard}
+            className="glass-pill px-3 py-2 rounded-xl flex items-center space-x-1.5 text-xs font-semibold text-zinc-200 hover:text-white transition cursor-pointer"
           >
-            <Trophy className="w-4 h-4 text-amber-400" />
+            <Trophy className="w-3.5 h-3.5 text-amber-400" />
             <span className="hidden sm:inline">{t.leaderboard}</span>
           </button>
 
-          {/* Mobile quick restart */}
-          <button
-            onClick={onRestart}
-            className="md:hidden glass-panel rounded-2xl p-2 text-slate-300 transition shadow-md cursor-pointer border border-white/10 active:scale-95"
-            title={t.resetRun}
-          >
-            <RotateCcw className="w-4 h-4 text-slate-300" />
-          </button>
-
-          {/* Sound Toggle */}
+          {/* Audio Mute/Unmute */}
           {onToggleMute && (
             <button
               onClick={onToggleMute}
-              className="glass-panel rounded-2xl p-2 text-slate-300 hover:text-white transition shadow-md cursor-pointer border border-white/10 active:scale-95"
-              title={isMuted ? 'Unmute' : 'Mute'}
+              className="glass-pill p-2 rounded-xl text-zinc-300 hover:text-white transition cursor-pointer"
+              title={isMuted ? 'Activer le son' : 'Couper le son'}
+              aria-label="Toggle mute"
             >
               {isMuted ? (
                 <VolumeX className="w-4 h-4 text-rose-400" />
               ) : (
-                <Volume2 className="w-4 h-4 text-indigo-400" />
+                <Volume2 className="w-4 h-4 text-zinc-300" />
               )}
             </button>
           )}
+
+          {/* Quick Restart */}
+          <button
+            onClick={onRestart}
+            className="glass-pill p-2 rounded-xl text-zinc-300 hover:text-white transition cursor-pointer"
+            title={`${t.resetRun} (R)`}
+            aria-label="Restart"
+          >
+            <RotateCcw className="w-4 h-4" />
+          </button>
         </div>
-      </div>
+      </header>
 
       {/* =========================================================================
-          TOP CENTER: Pure Athletic Chrono & Dynamic Telemetry Halo
+          TOP CENTER: Precision Digital Stopwatch & Telemetry
          ========================================================================= */}
-      <div className="absolute left-1/2 -translate-x-1/2 top-20 lg:top-4 flex flex-col items-center pointer-events-auto z-10">
-        <div className="glass-panel-elevated rounded-3xl px-5 sm:px-8 py-2.5 sm:py-3.5 flex flex-col items-center border border-white/10 shadow-2xl relative overflow-hidden backdrop-blur-2xl">
-          {/* Subtle Ambient Accent Beam */}
-          <div className="absolute inset-x-0 top-0 h-[2px] bg-gradient-to-r from-transparent via-cyan-400 to-transparent opacity-80" />
-
+      <div className="absolute left-1/2 -translate-x-1/2 top-20 lg:top-5 flex flex-col items-center pointer-events-auto z-10">
+        <div className="glass-panel rounded-2xl px-6 py-2.5 flex flex-col items-center shadow-xl border border-white/10">
           {/* Label: Chrono / Time */}
-          <div className="text-[10px] uppercase font-black tracking-widest text-slate-400 mb-0.5">
+          <div className="text-[10px] uppercase font-bold tracking-widest text-zinc-400 mb-0.5">
             {t.time}
           </div>
 
-          {/* Large Athletic Chronometer Display */}
+          {/* Large Clean Stopwatch */}
           <div
-            className={`text-3xl md:text-5xl font-black font-mono tracking-wider transition-colors duration-200 ${
-              isNewPB
-                ? 'text-emerald-300 drop-shadow-[0_0_20px_rgba(52,211,153,0.7)]'
-                : 'text-cyan-300 drop-shadow-[0_0_20px_rgba(56,189,248,0.5)]'
+            className={`font-mono text-3xl sm:text-4xl font-extrabold tracking-tight tabular-nums transition-colors duration-150 ${
+              isNewPB ? 'text-emerald-400' : 'text-white'
             }`}
           >
             {formatTime(tick)}
           </div>
 
-          {/* Live Speed Bar & Telemetry Sub-capsule */}
-          <div className="flex items-center space-x-3 mt-1.5 text-xs font-mono whitespace-nowrap">
-            <span className="text-cyan-400 font-black flex items-center space-x-1">
-              <span>⚡</span>
-              <span>{speedKmh.toFixed(1)} {t.kmh}</span>
+          {/* Sleek Sub-Telemetry Bar */}
+          <div className="flex items-center space-x-3 mt-1 text-xs font-mono text-zinc-400 whitespace-nowrap">
+            {/* Live Speed */}
+            <span className="flex items-center space-x-1 text-zinc-300">
+              <Gauge className="w-3 h-3 text-zinc-400" />
+              <span className="tabular-nums font-semibold">{speedKmh}</span>
+              <span className="text-[10px] text-zinc-400">{t.kmh}</span>
             </span>
 
-            <span className="text-slate-600 hidden sm:inline">•</span>
+            <span className="text-zinc-600">•</span>
 
-            {/* Personal Best comparison chip */}
-            <div className="hidden sm:flex items-center space-x-1 text-slate-300">
-              <span className="text-[10px] text-slate-400 font-bold uppercase">PB:</span>
-              <span className="font-bold text-slate-200">
+            {/* PB Comparison */}
+            <div className="flex items-center space-x-1 text-zinc-300">
+              <span className="text-[10px] text-zinc-400 font-semibold uppercase">PB:</span>
+              <span className="tabular-nums font-semibold text-zinc-200">
                 {personalBest ? formatTime(personalBest.ticks) : t.noRecordYet}
               </span>
               <button
                 onClick={onToggleGhost}
-                className="ml-1 text-slate-400 hover:text-white cursor-pointer active:scale-90"
-                title={showGhost ? 'Masquer fantôme' : 'Afficher fantôme'}
+                className="ml-1 text-zinc-500 hover:text-zinc-200 cursor-pointer p-0.5 transition"
+                title={showGhost ? 'Masquer le fantôme' : 'Afficher le fantôme'}
+                aria-label="Toggle ghost"
               >
-                {showGhost ? <Eye className="w-3 h-3 text-purple-400" /> : <EyeOff className="w-3 h-3" />}
+                {showGhost ? (
+                  <Eye className="w-3 h-3 text-purple-400" />
+                ) : (
+                  <EyeOff className="w-3 h-3 text-zinc-600" />
+                )}
               </button>
             </div>
-          </div>
-
-          {/* Micro Speed Bar */}
-          <div className="w-full h-1 bg-slate-800 rounded-full mt-2 overflow-hidden">
-            <div
-              className="h-full bg-gradient-to-r from-cyan-400 via-sky-300 to-indigo-500 transition-all duration-75 rounded-full shadow-[0_0_8px_rgba(56,189,248,0.8)]"
-              style={{ width: `${speedNormalized}%` }}
-            />
           </div>
         </div>
       </div>
 
       {/* =========================================================================
-          CENTER / LOWER-THIRD: Pre-game "Ready?" Prompt (Disappears when rolling)
+          PRE-RUN PROMPT (Centered, Clean, Unobtrusive)
          ========================================================================= */}
       {tick === 0 && status === 'ready' && (
-        <div className="absolute left-1/2 -translate-x-1/2 bottom-52 md:bottom-24 glass-panel-elevated rounded-2xl px-6 py-4 w-[min(92vw,34rem)] text-center pointer-events-none border border-cyan-400/30 shadow-2xl animate-in fade-in duration-300 overflow-hidden">
-          <div className="absolute inset-x-0 top-0 h-[2px] bg-gradient-to-r from-cyan-400 via-sky-300 to-indigo-500" />
-          <h2 className="text-lg font-black text-white tracking-widest mb-0.5">
-            {lang === 'fr' ? 'PRÊT ?' : 'READY?'}
-          </h2>
-          <p className="text-cyan-300 text-sm font-bold animate-pulse mb-3">
-            {t.tiltToStart}
-          </p>
-
-          <div className="hidden md:flex items-center justify-center space-x-3 text-xs text-slate-300">
-            <span className="flex items-center space-x-1.5">
-              <kbd className="keycap px-2 py-0.5 rounded font-mono text-[11px] text-white">WASD</kbd>
-              <span className="text-slate-400">/</span>
-              <kbd className="keycap px-2 py-0.5 rounded font-mono text-[11px] text-white">▲▼◄►</kbd>
-            </span>
-            <span className="text-slate-600">|</span>
-            <span className="flex items-center space-x-1">
-              <kbd className="keycap px-2 py-0.5 rounded font-mono text-[11px] text-white">SPACE</kbd>
-              <span className="text-slate-400 text-[11px] font-medium">{t.jumpKey}</span>
+        <div className="absolute left-1/2 -translate-x-1/2 bottom-20 md:bottom-12 pointer-events-none animate-in fade-in duration-300 z-10">
+          <div className="glass-panel rounded-full px-5 py-2.5 text-xs text-zinc-200 shadow-xl border border-white/10 flex items-center space-x-2.5">
+            <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse" />
+            <span className="font-medium">
+              {lang === 'fr'
+                ? 'Flèches ou ZQSD pour rouler • Espace pour sauter'
+                : 'Arrow keys or WASD to roll • Space to jump'}
             </span>
           </div>
         </div>
       )}
 
       {/* =========================================================================
-          CENTER MODAL: Goal Reached / Win Screen
+          VICTORY MODAL (Clean, Human, High-End Card)
          ========================================================================= */}
       {status === 'won' && (
-        <div className="self-center my-auto glass-panel-elevated rounded-3xl p-6 md:p-10 max-w-lg w-full text-center pointer-events-auto shadow-2xl border border-emerald-400/40 relative overflow-hidden animate-in zoom-in-95 duration-200">
-          <div className="absolute inset-x-0 top-0 h-1.5 bg-gradient-to-r from-emerald-500 via-teal-300 to-indigo-500" />
-
-          <div className="inline-flex p-4 rounded-3xl bg-emerald-500/20 text-emerald-300 mb-3 border border-emerald-400/40 shadow-xl shadow-emerald-500/25">
-            <Zap className="w-10 h-10 drop-shadow-[0_0_12px_rgba(52,211,153,0.8)]" />
+        <div className="self-center my-auto glass-panel-elevated rounded-3xl p-6 sm:p-8 max-w-md w-full text-center pointer-events-auto shadow-2xl border border-white/15 relative overflow-hidden animate-in zoom-in-95 duration-200">
+          <div className="w-12 h-12 rounded-2xl bg-emerald-500/15 border border-emerald-500/30 text-emerald-400 flex items-center justify-center mx-auto mb-3">
+            <Flag className="w-6 h-6" />
           </div>
 
-          <h2 className="text-2xl md:text-3xl font-black text-white mb-1 tracking-tight">
-            {isNewPB ? (
-              <span className="bg-gradient-to-r from-amber-300 via-emerald-300 to-cyan-300 bg-clip-text text-transparent">
-                {t.newPB}
-              </span>
-            ) : (
-              t.goalReached
-            )}
+          <h2 className="text-2xl font-black text-white mb-1 tracking-tight">
+            {isNewPB ? t.newPB : t.goalReached}
           </h2>
-          <p className="text-slate-300/80 text-xs md:text-sm mb-5 font-medium">{t.courseCompleted}</p>
+          <p className="text-zinc-400 text-xs sm:text-sm mb-4 font-normal">
+            {t.courseCompleted}
+          </p>
 
-          <div className="bg-slate-950/80 rounded-2xl p-5 mb-5 border border-white/10 shadow-inner">
-            <div className="text-[10px] text-slate-400 font-black uppercase tracking-widest mb-1">
+          {/* Time Display Card */}
+          <div className="bg-black/40 rounded-2xl p-4 mb-4 border border-white/10">
+            <div className="text-[10px] uppercase font-bold tracking-widest text-zinc-400 mb-0.5">
               {t.finalTime}
             </div>
-            <div className="text-4xl md:text-5xl font-black font-mono text-emerald-300 mb-2 drop-shadow-[0_0_20px_rgba(52,211,153,0.5)]">
+            <div className="font-mono text-4xl sm:text-5xl font-black tabular-nums text-white my-1">
               {formatTime(tick)}
             </div>
-            <div className="text-[11px] text-slate-400 font-mono flex items-center justify-center space-x-2">
+            <div className="text-[11px] font-mono text-zinc-400 mt-1 flex items-center justify-center space-x-2">
               <span>{tick} frames</span>
               <span>•</span>
-              <span className="text-indigo-300 font-bold">Hash {stateHash}</span>
+              <span className="text-zinc-300">60Hz</span>
             </div>
           </div>
 
-          {/* Server Verification Status Banner */}
-          <div className="mb-5 p-3.5 rounded-2xl border text-xs flex items-center justify-center space-x-2 bg-slate-900/60 border-white/10">
+          {/* Verification Status Banner */}
+          <div className="mb-4 p-3 rounded-xl border text-xs flex items-center justify-center space-x-2 bg-white/[0.03] border-white/10">
             {submitStatus === 'submitting' && (
               <>
-                <div className="w-4 h-4 rounded-full border-2 border-indigo-400 border-t-transparent animate-spin" />
-                <span className="text-indigo-300 font-bold">{t.validatingServer}</span>
+                <div className="w-3.5 h-3.5 rounded-full border-2 border-zinc-400 border-t-transparent animate-spin" />
+                <span className="text-zinc-300 font-medium">{t.validatingServer}</span>
               </>
             )}
             {submitStatus === 'verified' && (
               <>
                 <CheckCircle2 className="w-4 h-4 text-emerald-400" />
-                <span className="text-emerald-300 font-bold font-mono">
+                <span className="text-emerald-300 font-medium font-mono text-xs">
                   {submitMessage || t.verifiedServer}
                 </span>
               </>
@@ -372,45 +345,46 @@ export const HUD: React.FC<HUDProps> = ({
             {submitStatus === 'rejected' && (
               <>
                 <AlertTriangle className="w-4 h-4 text-rose-400" />
-                <span className="text-rose-300 font-bold font-mono">
+                <span className="text-rose-300 font-medium font-mono text-xs">
                   {t.rejectedServer}: {submitMessage}
                 </span>
               </>
             )}
             {submitStatus === 'idle' && (
-              <span className="text-slate-400 font-medium">Replay recorded</span>
+              <span className="text-zinc-400 font-medium">Replay enregistré</span>
             )}
           </div>
 
-          {/* Share Result Button */}
+          {/* Share Button */}
           <button
             onClick={handleShare}
-            className="w-full mb-3.5 py-3.5 px-4 rounded-2xl bg-gradient-to-r from-indigo-600 via-indigo-500 to-purple-600 hover:from-indigo-500 hover:to-purple-500 active:scale-[0.98] font-bold text-white shadow-xl shadow-indigo-500/25 transition flex items-center justify-center space-x-2 border border-indigo-400/40 cursor-pointer"
+            className="w-full mb-3 py-3 px-4 rounded-xl bg-white/10 hover:bg-white/15 active:scale-[0.98] font-semibold text-white transition flex items-center justify-center space-x-2 border border-white/10 cursor-pointer"
           >
             {copiedShare ? (
               <>
-                <Check className="w-4 h-4 text-emerald-300" />
-                <span className="text-emerald-200">{t.cardCopied}</span>
+                <Check className="w-4 h-4 text-emerald-400" />
+                <span className="text-emerald-300">{t.cardCopied}</span>
               </>
             ) : (
               <>
-                <Share2 className="w-4 h-4 text-indigo-200" />
+                <Share2 className="w-4 h-4 text-zinc-300" />
                 <span>{t.shareCard}</span>
               </>
             )}
           </button>
 
-          <div className="flex space-x-3">
+          {/* Action Row */}
+          <div className="flex space-x-2.5">
             <button
               onClick={onOpenLeaderboard}
-              className="flex-1 py-3 px-4 rounded-2xl bg-white/10 hover:bg-white/15 active:scale-[0.98] font-bold text-white transition flex items-center justify-center space-x-2 border border-white/10 cursor-pointer"
+              className="flex-1 py-3 px-4 rounded-xl bg-white/10 hover:bg-white/15 active:scale-[0.98] font-semibold text-white transition flex items-center justify-center space-x-2 border border-white/10 cursor-pointer text-xs sm:text-sm"
             >
-              <Trophy className="w-4 h-4 text-amber-300" />
+              <Trophy className="w-4 h-4 text-amber-400" />
               <span>{t.leaderboard}</span>
             </button>
             <button
               onClick={onRestart}
-              className="flex-1 py-3 px-4 rounded-2xl bg-gradient-to-r from-emerald-500 to-teal-500 hover:from-emerald-400 hover:to-teal-400 active:scale-[0.98] font-black text-white shadow-xl shadow-emerald-500/30 transition flex items-center justify-center space-x-2 border border-emerald-400/40 cursor-pointer"
+              className="flex-1 py-3 px-4 rounded-xl bg-emerald-500 hover:bg-emerald-400 active:scale-[0.98] font-bold text-zinc-950 transition flex items-center justify-center space-x-2 shadow-lg shadow-emerald-500/20 cursor-pointer text-xs sm:text-sm"
             >
               <RotateCcw className="w-4 h-4" />
               <span>{t.playAgain} (R)</span>
@@ -420,19 +394,18 @@ export const HUD: React.FC<HUDProps> = ({
       )}
 
       {/* =========================================================================
-          CENTER MODAL: Off Track / Death Screen
+          OFF-TRACK / DEATH MODAL
          ========================================================================= */}
       {status === 'dead' && (
-        <div className="self-center my-auto glass-panel-elevated rounded-3xl p-6 md:p-8 max-w-sm w-full text-center pointer-events-auto border border-rose-500/40 shadow-2xl relative overflow-hidden animate-in zoom-in-95 duration-200">
-          <div className="absolute inset-x-0 top-0 h-1 bg-gradient-to-r from-rose-600 via-red-500 to-pink-600" />
-          <div className="w-14 h-14 mx-auto mb-3 rounded-2xl bg-rose-500/20 border border-rose-500/40 flex items-center justify-center text-2xl shadow-lg shadow-rose-500/20">
-            💥
+        <div className="self-center my-auto glass-panel-elevated rounded-3xl p-6 sm:p-7 max-w-xs w-full text-center pointer-events-auto border border-rose-500/25 shadow-2xl relative overflow-hidden animate-in zoom-in-95 duration-200">
+          <div className="w-12 h-12 mx-auto mb-3 rounded-2xl bg-rose-500/15 border border-rose-500/30 flex items-center justify-center text-xl">
+            ⚠️
           </div>
-          <h2 className="text-2xl font-black text-white mb-1.5 tracking-tight">{t.fellOff}</h2>
-          <p className="text-slate-300/80 text-xs md:text-sm mb-5 font-medium">{t.keepBalance}</p>
+          <h2 className="text-xl font-bold text-white mb-1 tracking-tight">{t.fellOff}</h2>
+          <p className="text-zinc-400 text-xs mb-5 font-normal">{t.keepBalance}</p>
           <button
             onClick={onRestart}
-            className="w-full py-3.5 px-6 rounded-2xl bg-gradient-to-r from-rose-500 via-rose-600 to-pink-600 hover:from-rose-400 hover:to-pink-500 active:scale-[0.98] font-black text-white shadow-xl shadow-rose-500/30 transition flex items-center justify-center space-x-2 border border-rose-400/40 cursor-pointer"
+            className="w-full py-3 px-5 rounded-xl bg-white hover:bg-zinc-200 active:scale-[0.98] font-bold text-zinc-950 transition flex items-center justify-center space-x-2 cursor-pointer shadow-lg"
           >
             <RotateCcw className="w-4 h-4" />
             <span>{t.retry} (R)</span>
@@ -441,42 +414,40 @@ export const HUD: React.FC<HUDProps> = ({
       )}
 
       {/* =========================================================================
-          BOTTOM BAR (desktop): determinism fingerprint & restart
+          BOTTOM FOOTNOTE / DESKTOP BAR
          ========================================================================= */}
-      <div className="hidden md:flex items-center justify-between pointer-events-auto w-full gap-2">
-        <div className="glass-panel rounded-xl px-3 py-1.5 flex items-center space-x-2 text-[10px] text-slate-400 font-mono border border-white/5">
-          <Hash className="w-3 h-3 text-cyan-400" />
-          <span className="text-slate-400">{t.stateHash}:</span>
-          <span className="text-cyan-300 font-bold tracking-tight">{stateHash}</span>
-          <span className="text-slate-600">•</span>
-          <span className="text-emerald-400 font-bold">60Hz</span>
+      <footer className="hidden md:flex items-center justify-between pointer-events-auto w-full">
+        <div className="text-[11px] font-mono text-zinc-400">
+          <span>{cleanName(levelName)}</span>
+          <span className="mx-2 text-zinc-600">•</span>
+          <span>60Hz WASM</span>
         </div>
 
         <button
           onClick={onRestart}
-          className="glass-panel rounded-xl px-3.5 py-1.5 hover:bg-white/10 text-xs font-bold text-slate-300 hover:text-white transition flex items-center space-x-1.5 border border-white/10 shadow-md cursor-pointer active:scale-95"
+          className="glass-pill px-3 py-1.5 rounded-xl text-xs font-semibold text-zinc-300 hover:text-white transition flex items-center space-x-1.5 cursor-pointer"
           title={`${t.resetRun} (R)`}
         >
-          <RotateCcw className="w-3.5 h-3.5 text-slate-400" />
+          <RotateCcw className="w-3.5 h-3.5 text-zinc-400" />
           <span>{t.resetRun}</span>
-          <span className="text-slate-500 font-mono text-[10px]">(R)</span>
+          <span className="text-zinc-400 text-[10px] font-mono">(R)</span>
         </button>
-      </div>
+      </footer>
 
-      {/* Mobile: compact gyro toggle between joystick (left) and jump (right) */}
+      {/* Mobile Gyroscope Toggle */}
       {gyroSupported && onToggleGyro && (
         <div className="md:hidden absolute bottom-6 left-1/2 -translate-x-1/2 flex items-center space-x-1.5 pointer-events-auto z-20">
           <button
             onClick={onToggleGyro}
             className={`glass-pill rounded-2xl p-3 transition cursor-pointer active:scale-95 ${
-              gyroActive ? 'glass-pill-active text-purple-200' : 'text-slate-300'
+              gyroActive ? 'glass-pill-active text-purple-200' : 'text-zinc-300'
             }`}
             title={gyroActive ? t.gyroMode : t.touchMode}
           >
             {gyroActive ? (
-              <Smartphone className="w-5 h-5 text-purple-300 animate-pulse" />
+              <Smartphone className="w-5 h-5 text-purple-300" />
             ) : (
-              <Gamepad2 className="w-5 h-5 text-slate-300" />
+              <Gamepad2 className="w-5 h-5 text-zinc-300" />
             )}
           </button>
           {gyroActive && onCalibrateGyro && (

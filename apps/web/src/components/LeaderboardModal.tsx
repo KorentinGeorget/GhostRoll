@@ -35,49 +35,47 @@ export const LeaderboardModal: React.FC<LeaderboardModalProps> = ({
   const fr = lang === 'fr';
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/75 backdrop-blur-xl pointer-events-auto animate-in fade-in duration-200">
-      <div className="glass-panel-elevated w-full max-w-lg rounded-3xl p-6 md:p-8 flex flex-col max-h-[85vh] shadow-2xl border border-white/10 relative overflow-hidden">
-        {/* Ambient Top Glow */}
-        <div className="absolute inset-x-0 top-0 h-1 bg-gradient-to-r from-amber-500 via-yellow-300 to-indigo-500" />
-
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-md pointer-events-auto animate-in fade-in duration-150">
+      <div className="glass-panel-elevated w-full max-w-lg rounded-2xl p-6 sm:p-7 flex flex-col max-h-[85vh] shadow-2xl border border-white/10 relative overflow-hidden">
         {/* Header */}
-        <div className="flex items-center justify-between pb-4 border-b border-white/10 mb-4">
-          <div className="flex items-center space-x-3.5">
-            <div className="p-3 rounded-2xl bg-gradient-to-br from-amber-500/25 to-yellow-500/10 text-amber-300 border border-amber-500/30 shadow-lg shadow-amber-500/15">
-              <Trophy className="w-6 h-6 drop-shadow-[0_0_8px_rgba(245,158,11,0.5)]" />
+        <div className="flex items-center justify-between pb-4 border-b border-white/[0.08] mb-4">
+          <div className="flex items-center space-x-3">
+            <div className="w-10 h-10 rounded-xl bg-amber-400/10 text-amber-400 border border-amber-400/20 flex items-center justify-center">
+              <Trophy className="w-5 h-5" />
             </div>
             <div>
               <div className="flex items-center space-x-2">
-                <h2 className="text-xl md:text-2xl font-black text-white tracking-wide">{fr ? 'Classement mondial' : 'Global Leaderboard'}</h2>
-                <span className="text-[10px] font-black uppercase px-2 py-0.5 rounded-full bg-indigo-500/20 text-indigo-300 border border-indigo-500/30">
+                <h2 className="text-lg font-bold text-white tracking-tight">{fr ? 'Classement mondial' : 'Global Leaderboard'}</h2>
+                <span className="text-[10px] font-mono uppercase px-2 py-0.5 rounded bg-white/[0.06] text-zinc-300 border border-white/10">
                   Live
                 </span>
               </div>
-              <p className="text-xs text-slate-400 font-medium">{fr ? 'Runs déterministes vérifiés par le serveur' : 'Server-verified deterministic runs'}</p>
+              <p className="text-xs text-zinc-400 font-normal">{fr ? 'Temps déterministes vérifiés par le serveur' : 'Server-verified deterministic runs'}</p>
             </div>
           </div>
           <button
             onClick={onClose}
-            className="p-2.5 rounded-xl text-slate-400 hover:text-white hover:bg-white/10 transition active:scale-90 cursor-pointer"
+            className="p-2 rounded-lg text-zinc-400 hover:text-white hover:bg-white/10 transition active:scale-95 cursor-pointer"
+            aria-label="Close"
           >
             <X className="w-5 h-5" />
           </button>
         </div>
 
         {/* Content */}
-        <div className="flex-1 overflow-y-auto space-y-2.5 pr-1.5 custom-scrollbar">
+        <div className="flex-1 overflow-y-auto space-y-2 pr-1 custom-scrollbar">
           {loading ? (
             <div className="py-16 flex flex-col items-center justify-center space-y-3">
-              <div className="w-10 h-10 rounded-full border-3 border-indigo-400 border-t-transparent animate-spin shadow-lg shadow-indigo-500/20" />
-              <p className="text-xs text-slate-400 font-medium animate-pulse">{fr ? 'Chargement des temps vérifiés...' : 'Fetching verified times...'}</p>
+              <div className="w-8 h-8 rounded-full border-2 border-zinc-400 border-t-white animate-spin" />
+              <p className="text-xs text-zinc-400 font-mono">{fr ? 'Chargement des temps vérifiés...' : 'Fetching verified times...'}</p>
             </div>
           ) : entries.length === 0 ? (
             <div className="py-14 text-center px-4">
-              <div className="w-12 h-12 mx-auto mb-3 rounded-2xl bg-white/5 border border-white/10 flex items-center justify-center text-amber-400">
-                <Award className="w-6 h-6" />
+              <div className="w-10 h-10 mx-auto mb-3 rounded-xl bg-white/[0.04] border border-white/10 flex items-center justify-center text-zinc-400">
+                <Award className="w-5 h-5" />
               </div>
               <p className="text-white font-bold text-sm mb-1">{fr ? 'Aucun temps vérifié pour le moment' : 'No verified times yet today'}</p>
-              <p className="text-xs text-slate-400">{fr ? 'Franchis la ligne en premier et pose un record !' : 'Be the first to cross the finish line and set a record!'}</p>
+              <p className="text-xs text-zinc-400">{fr ? 'Franchis la ligne en premier et pose un record !' : 'Be the first to cross the finish line and set a record!'}</p>
             </div>
           ) : (
             entries.map((entry) => {
@@ -90,39 +88,39 @@ export const LeaderboardModal: React.FC<LeaderboardModalProps> = ({
               return (
                 <div
                   key={entry.runId}
-                  className={`flex items-center justify-between p-3.5 md:p-4 rounded-2xl border transition-all duration-200 ${
+                  className={`flex items-center justify-between p-3 sm:p-3.5 rounded-xl border transition-all duration-150 ${
                     isSelected
-                      ? 'bg-purple-950/50 border-purple-400/60 shadow-lg shadow-purple-500/20 ring-1 ring-purple-500/30'
+                      ? 'bg-zinc-800/80 border-emerald-500/40 ring-1 ring-emerald-500/30'
                       : isFirst
-                      ? 'bg-gradient-to-r from-amber-950/30 to-slate-900/40 border-amber-500/30 hover:border-amber-500/50 shadow-md'
-                      : 'bg-slate-900/45 border-white/5 hover:border-white/15'
+                      ? 'bg-white/[0.04] border-amber-400/25 hover:border-amber-400/40'
+                      : 'bg-white/[0.02] border-white/[0.06] hover:border-white/15'
                   }`}
                 >
-                  <div className="flex items-center space-x-3.5">
+                  <div className="flex items-center space-x-3">
                     {/* Rank Badge */}
                     <div
-                      className={`w-8 h-8 rounded-xl flex items-center justify-center font-black font-mono text-xs shadow-md ${
+                      className={`w-7 h-7 rounded-lg flex items-center justify-center font-bold font-mono text-xs ${
                         isFirst
-                          ? 'bg-gradient-to-br from-amber-400 to-yellow-500 text-slate-950 border border-amber-300 shadow-amber-500/30'
+                          ? 'bg-amber-400 text-zinc-950 shadow-sm'
                           : isSecond
-                          ? 'bg-gradient-to-br from-slate-200 to-slate-400 text-slate-950 border border-slate-200 shadow-slate-300/20'
+                          ? 'bg-zinc-200 text-zinc-950'
                           : isThird
-                          ? 'bg-gradient-to-br from-amber-700 to-amber-800 text-amber-100 border border-amber-600 shadow-amber-800/30'
-                          : 'bg-slate-800/90 text-slate-300 border border-white/5'
+                          ? 'bg-amber-700 text-amber-100'
+                          : 'bg-zinc-800 text-zinc-300'
                       }`}
                     >
                       {entry.rank}
                     </div>
 
                     <div>
-                      <div className="text-sm font-bold text-slate-100 flex items-center space-x-1.5">
+                      <div className="text-sm font-semibold text-zinc-100 flex items-center space-x-1.5">
                         <span className="truncate max-w-[130px] md:max-w-[160px]">{entry.displayName}</span>
                         {isFirst && <Flame className="w-3.5 h-3.5 text-amber-400 inline-block shrink-0" />}
                         <span title="Verified by server" className="shrink-0">
                           <CheckCircle2 className="w-3.5 h-3.5 text-emerald-400" />
                         </span>
                       </div>
-                      <div className="text-[11px] text-slate-400 font-mono tracking-tight">
+                      <div className="text-[11px] text-zinc-400 font-mono tracking-tight">
                         Hash {entry.finalHash}
                       </div>
                     </div>
@@ -130,7 +128,7 @@ export const LeaderboardModal: React.FC<LeaderboardModalProps> = ({
 
                   <div className="flex items-center space-x-3">
                     <div className="text-right">
-                      <div className="font-mono font-black text-sm md:text-base text-cyan-300 drop-shadow-[0_0_8px_rgba(56,189,248,0.3)]">
+                      <div className="font-mono font-bold text-sm sm:text-base text-zinc-100 tabular-nums">
                         {formatLeaderboardTime(entry.ticks)}
                       </div>
                     </div>
@@ -139,13 +137,13 @@ export const LeaderboardModal: React.FC<LeaderboardModalProps> = ({
                       <button
                         onClick={() => onSelectGhost(entry)}
                         title={isSelected ? 'Ghost active' : 'Race this ghost'}
-                        className={`p-2.5 rounded-xl text-xs font-bold flex items-center space-x-1.5 transition active:scale-90 cursor-pointer ${
+                        className={`px-2.5 py-1.5 rounded-lg text-xs font-semibold flex items-center space-x-1.5 transition active:scale-95 cursor-pointer ${
                           isSelected
-                            ? 'bg-purple-600 text-white shadow-lg shadow-purple-600/30 border border-purple-400'
-                            : 'bg-white/5 hover:bg-white/10 text-slate-300 hover:text-white border border-white/5'
+                            ? 'bg-emerald-500 text-zinc-950 font-bold'
+                            : 'bg-white/10 hover:bg-white/15 text-zinc-200 border border-white/10'
                         }`}
                       >
-                        <Play className="w-3.5 h-3.5 fill-current" />
+                        <Play className="w-3 h-3 fill-current" />
                         <span className="hidden sm:inline text-[11px]">{isSelected ? (fr ? 'Actif' : 'Active') : (fr ? 'Défier' : 'Race')}</span>
                       </button>
                     )}
@@ -157,14 +155,14 @@ export const LeaderboardModal: React.FC<LeaderboardModalProps> = ({
         </div>
 
         {/* Footer */}
-        <div className="mt-4 pt-3.5 border-t border-white/10 text-[11px] text-slate-400 font-medium flex items-center justify-between">
+        <div className="mt-4 pt-3 border-t border-white/[0.08] text-[11px] text-zinc-400 font-medium flex items-center justify-between">
           <span className="flex items-center space-x-1.5">
             <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 inline-block" />
-            <span>{fr ? 'Les meilleurs fantômes se chargent automatiquement' : 'Top ghost replays load automatically'}</span>
+            <span>{fr ? 'Fantômes automatiques' : 'Top ghosts auto-load'}</span>
           </span>
           <button
             onClick={onClose}
-            className="px-5 py-2 rounded-xl bg-white/10 hover:bg-white/15 text-white font-bold transition active:scale-95 cursor-pointer border border-white/10 shadow-sm"
+            className="px-4 py-2 rounded-xl bg-white/10 hover:bg-white/15 text-white font-semibold text-xs transition active:scale-95 cursor-pointer border border-white/10"
           >
             {fr ? 'Fermer' : 'Close'}
           </button>

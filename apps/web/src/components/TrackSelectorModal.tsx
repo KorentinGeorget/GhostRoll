@@ -65,69 +65,67 @@ export const TrackSelectorModal: React.FC<TrackSelectorModalProps> = ({
   };
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/75 backdrop-blur-xl animate-in fade-in duration-200 pointer-events-auto">
-      <div className="glass-panel-elevated w-full max-w-2xl max-h-[85vh] rounded-3xl p-6 md:p-8 flex flex-col shadow-2xl border border-white/10 overflow-hidden relative">
-        {/* Top ambient glow */}
-        <div className="absolute inset-x-0 top-0 h-1 bg-gradient-to-r from-sky-500 via-indigo-400 to-fuchsia-500" />
-
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-md animate-in fade-in duration-150 pointer-events-auto">
+      <div className="glass-panel-elevated w-full max-w-2xl max-h-[85vh] rounded-2xl p-6 sm:p-7 flex flex-col shadow-2xl border border-white/10 overflow-hidden relative">
         {/* Header */}
-        <div className="flex items-center justify-between pb-4 border-b border-white/10">
-          <div className="flex items-center space-x-3.5">
-            <div className="p-3 rounded-2xl bg-gradient-to-br from-indigo-500/25 to-sky-500/10 text-sky-400 border border-sky-500/30 shadow-lg shadow-sky-500/15">
-              <Compass className="w-6 h-6 drop-shadow-[0_0_8px_rgba(56,189,248,0.5)]" />
+        <div className="flex items-center justify-between pb-4 border-b border-white/[0.08]">
+          <div className="flex items-center space-x-3">
+            <div className="w-10 h-10 rounded-xl bg-white/[0.05] border border-white/10 text-zinc-300 flex items-center justify-center">
+              <Compass className="w-5 h-5" />
             </div>
             <div>
               <div className="flex items-center space-x-2">
-                <h2 className="text-xl md:text-2xl font-black text-white tracking-wide">{t.courseSelector}</h2>
-                <span className="text-[10px] font-black uppercase px-2 py-0.5 rounded-full bg-sky-500/20 text-sky-300 border border-sky-500/30">
+                <h2 className="text-lg font-bold text-white tracking-tight">{t.courseSelector}</h2>
+                <span className="text-[10px] font-mono uppercase px-2 py-0.5 rounded bg-white/[0.06] text-zinc-300 border border-white/10">
                   Daily Seed
                 </span>
               </div>
-              <p className="text-xs text-slate-400 font-medium">{t.courseSelectorDesc}</p>
+              <p className="text-xs text-zinc-400 font-normal">{t.courseSelectorDesc}</p>
             </div>
           </div>
           <button
             onClick={onClose}
-            className="p-2.5 rounded-xl text-slate-400 hover:text-white hover:bg-white/10 transition active:scale-90 cursor-pointer"
+            className="p-2 rounded-lg text-zinc-400 hover:text-white hover:bg-white/10 transition active:scale-95 cursor-pointer"
+            aria-label="Close"
           >
             <X className="w-5 h-5" />
           </button>
         </div>
 
         {/* Scrollable list */}
-        <div className="overflow-y-auto my-4 space-y-4 pr-1.5 custom-scrollbar">
+        <div className="overflow-y-auto my-4 space-y-4 pr-1 custom-scrollbar">
           {/* Quick Actions: Random Level & Friend Challenge */}
           <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
             {/* Random Track Roll */}
             <button
               onClick={handleRollRandom}
-              className="p-4 rounded-2xl bg-gradient-to-br from-purple-950/70 via-indigo-950/60 to-slate-900/80 hover:from-purple-900/80 hover:to-indigo-900/80 border border-purple-500/30 hover:border-purple-400/60 transition shadow-lg text-left flex items-center space-x-3.5 group cursor-pointer active:scale-[0.98]"
+              className="p-4 rounded-xl bg-white/[0.03] hover:bg-white/[0.06] border border-white/[0.08] hover:border-white/15 transition text-left flex items-center space-x-3.5 group cursor-pointer active:scale-[0.99]"
             >
-              <div className="p-3 rounded-2xl bg-purple-500/20 text-purple-300 border border-purple-500/40 group-hover:rotate-12 transition-transform shadow-md">
+              <div className="w-10 h-10 rounded-lg bg-white/[0.06] text-zinc-200 border border-white/10 flex items-center justify-center group-hover:scale-105 transition-transform">
                 <Dices className="w-5 h-5" />
               </div>
               <div>
-                <h3 className="font-black text-white text-sm md:text-base tracking-tight flex items-center space-x-1.5">
+                <h3 className="font-bold text-white text-sm tracking-tight flex items-center space-x-1.5">
                   <span>{t.randomTrack}</span>
-                  <span className="text-[9px] px-1.5 py-0.5 rounded-full bg-purple-500/30 text-purple-200 border border-purple-400/40 font-mono">
+                  <span className="text-[9px] px-1.5 py-0.2 rounded bg-white/10 text-zinc-300 border border-white/10 font-mono">
                     INF
                   </span>
                 </h3>
-                <p className="text-xs text-slate-400 font-medium">{t.generateRandom}</p>
+                <p className="text-xs text-zinc-400 font-normal">{t.generateRandom}</p>
               </div>
             </button>
 
             {/* Friend Challenge Card */}
-            <div className="p-4 rounded-2xl bg-slate-900/60 border border-white/10 flex flex-col justify-between">
+            <div className="p-4 rounded-xl bg-white/[0.03] border border-white/[0.08] flex flex-col justify-between">
               <div className="flex items-center justify-between mb-2">
-                <div className="flex items-center space-x-2 text-xs font-black uppercase tracking-wider text-cyan-300">
-                  <Swords className="w-3.5 h-3.5 text-cyan-400" />
+                <div className="flex items-center space-x-2 text-xs font-semibold text-zinc-300">
+                  <Swords className="w-3.5 h-3.5 text-zinc-400" />
                   <span>{t.challengeFriend}</span>
                 </div>
                 <button
                   type="button"
                   onClick={handleCopyLink}
-                  className="text-[11px] font-bold text-cyan-300 hover:text-cyan-200 flex items-center space-x-1 px-2 py-0.5 rounded-lg bg-cyan-500/15 border border-cyan-500/30 hover:bg-cyan-500/25 transition active:scale-95 cursor-pointer"
+                  className="text-[11px] font-medium text-zinc-300 hover:text-white flex items-center space-x-1 px-2 py-0.5 rounded-md bg-white/[0.06] border border-white/10 transition active:scale-95 cursor-pointer"
                   title={t.copyLink}
                 >
                   <Share2 className="w-3 h-3" />
@@ -141,12 +139,12 @@ export const TrackSelectorModal: React.FC<TrackSelectorModalProps> = ({
                   value={customSeedInput}
                   onChange={(e) => setCustomSeedInput(e.target.value)}
                   placeholder={t.enterSeed}
-                  className="flex-1 bg-black/40 border border-white/10 rounded-xl px-3 py-1.5 text-xs text-white placeholder-slate-500 focus:outline-none focus:border-cyan-400 font-mono uppercase"
+                  className="flex-1 bg-black/40 border border-white/10 rounded-lg px-3 py-1.5 text-xs text-white placeholder-zinc-500 focus:outline-none focus:border-white/30 font-mono uppercase"
                 />
                 <button
                   type="submit"
                   disabled={!customSeedInput.trim()}
-                  className="px-3 py-1.5 rounded-xl bg-cyan-500 hover:bg-cyan-400 disabled:opacity-40 disabled:hover:bg-cyan-500 text-slate-950 font-black text-xs transition active:scale-95 cursor-pointer whitespace-nowrap"
+                  className="px-3 py-1.5 rounded-lg bg-white hover:bg-zinc-200 disabled:opacity-40 disabled:hover:bg-white text-zinc-950 font-bold text-xs transition active:scale-95 cursor-pointer whitespace-nowrap"
                 >
                   {t.playSeed}
                 </button>
@@ -156,8 +154,8 @@ export const TrackSelectorModal: React.FC<TrackSelectorModalProps> = ({
 
           {/* Today's Daily Section */}
           <div>
-            <div className="flex items-center space-x-2 text-xs font-black uppercase tracking-wider text-amber-300 mb-2.5">
-              <Sparkles className="w-3.5 h-3.5 drop-shadow-[0_0_6px_rgba(252,211,77,0.6)]" />
+            <div className="flex items-center space-x-2 text-xs font-bold uppercase tracking-wider text-zinc-400 mb-2">
+              <Sparkles className="w-3.5 h-3.5 text-amber-400" />
               <span>{t.todayRace}</span>
             </div>
 
@@ -167,38 +165,38 @@ export const TrackSelectorModal: React.FC<TrackSelectorModalProps> = ({
                   onSelectLevel(dailyLevelId);
                   onClose();
                 }}
-                className={`w-full text-left p-4.5 rounded-2xl border transition-all duration-200 flex items-center justify-between cursor-pointer active:scale-[0.99] ${
+                className={`w-full text-left p-4 rounded-xl border transition-all duration-150 flex items-center justify-between cursor-pointer active:scale-[0.99] ${
                   currentLevelId === dailyLevelId
-                    ? 'bg-gradient-to-r from-indigo-950/90 via-purple-950/80 to-slate-900/90 border-indigo-400 shadow-xl shadow-indigo-500/20 ring-1 ring-indigo-500/40'
-                    : 'bg-slate-900/40 hover:bg-slate-900/70 border-white/10 hover:border-white/20'
+                    ? 'bg-zinc-800/80 border-emerald-500/40 ring-1 ring-emerald-500/30'
+                    : 'bg-white/[0.03] hover:bg-white/[0.06] border-white/[0.08] hover:border-white/15'
                 }`}
               >
                 <div className="flex items-center space-x-3.5">
-                  <div className="p-3 rounded-2xl bg-amber-400/20 text-amber-300 border border-amber-400/30 shadow-md">
+                  <div className="w-10 h-10 rounded-lg bg-amber-400/10 text-amber-400 border border-amber-400/20 flex items-center justify-center">
                     <Calendar className="w-5 h-5" />
                   </div>
                   <div>
                     <div className="flex items-center flex-wrap gap-2">
-                      <span className="font-black text-white text-base md:text-lg tracking-tight">
+                      <span className="font-bold text-white text-base tracking-tight">
                         {cleanName(dailyName || 'Daily Challenge')}
                       </span>
-                      <span className="flex items-center space-x-1 whitespace-nowrap shrink-0 text-[10px] uppercase font-black tracking-wider px-2 py-0.5 rounded-full bg-emerald-500/20 text-emerald-300 border border-emerald-500/40">
+                      <span className="flex items-center space-x-1 whitespace-nowrap shrink-0 text-[10px] font-mono uppercase px-2 py-0.5 rounded bg-emerald-500/15 text-emerald-300 border border-emerald-500/30">
                         <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse" />
                         <span>{t.activeToday}</span>
                       </span>
-                      <span className="flex items-center space-x-1 whitespace-nowrap shrink-0 text-[10px] uppercase font-black tracking-wider px-2 py-0.5 rounded-full bg-rose-500/20 text-rose-300 border border-rose-500/40">
-                        <Flame className="w-3 h-3 text-rose-400" />
+                      <span className="flex items-center space-x-1 whitespace-nowrap shrink-0 text-[10px] font-mono uppercase px-2 py-0.5 rounded bg-amber-500/15 text-amber-300 border border-amber-500/30">
+                        <Flame className="w-3 h-3 text-amber-400" />
                         <span>{t.hardTrack}</span>
                       </span>
                     </div>
-                    <span className="text-xs text-slate-400 font-mono">
+                    <span className="text-xs text-zinc-400 font-mono">
                       Seed: {dailyDate || 'today'}
                     </span>
                   </div>
                 </div>
 
                 {currentLevelId === dailyLevelId && (
-                  <div className="flex items-center space-x-1.5 whitespace-nowrap shrink-0 text-xs font-bold text-emerald-300 bg-emerald-500/15 px-3 py-1 rounded-xl border border-emerald-500/30">
+                  <div className="flex items-center space-x-1.5 whitespace-nowrap shrink-0 text-xs font-semibold text-emerald-300 bg-emerald-500/15 px-3 py-1 rounded-lg border border-emerald-500/30">
                     <Check className="w-4 h-4 text-emerald-400" />
                     <span>{t.selected}</span>
                   </div>
@@ -209,18 +207,18 @@ export const TrackSelectorModal: React.FC<TrackSelectorModalProps> = ({
 
           {/* Past 7 Days Archive */}
           <div>
-            <div className="flex items-center space-x-2 text-xs font-black uppercase tracking-wider text-slate-400 mb-2.5">
-              <Calendar className="w-3.5 h-3.5 text-indigo-400" />
+            <div className="flex items-center space-x-2 text-xs font-bold uppercase tracking-wider text-zinc-400 mb-2">
+              <Calendar className="w-3.5 h-3.5 text-zinc-400" />
               <span>{t.pastArchive}</span>
             </div>
 
             {loading ? (
-              <div className="py-8 flex flex-col items-center justify-center space-y-2 text-slate-400 text-xs">
-                <div className="w-8 h-8 rounded-full border-3 border-indigo-400 border-t-transparent animate-spin" />
-                <span className="animate-pulse font-medium">{t.loadingArchive}</span>
+              <div className="py-8 flex flex-col items-center justify-center space-y-2 text-zinc-400 text-xs">
+                <div className="w-6 h-6 rounded-full border-2 border-zinc-400 border-t-white animate-spin" />
+                <span className="font-mono">{t.loadingArchive}</span>
               </div>
             ) : (
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-2.5">
                 {archive
                   .filter((item) => item.levelId !== dailyLevelId)
                   .map((item) => {
@@ -232,29 +230,29 @@ export const TrackSelectorModal: React.FC<TrackSelectorModalProps> = ({
                           onSelectLevel(item.levelId);
                           onClose();
                         }}
-                        className={`p-3.5 rounded-2xl border text-left transition-all duration-200 flex items-center justify-between cursor-pointer active:scale-[0.98] ${
+                        className={`p-3 rounded-xl border text-left transition-all duration-150 flex items-center justify-between cursor-pointer active:scale-[0.99] ${
                           isSelected
-                            ? 'bg-indigo-950/80 border-indigo-400 shadow-lg shadow-indigo-500/20 ring-1 ring-indigo-500/30'
-                            : 'bg-slate-900/40 hover:bg-slate-900/70 border-white/5 hover:border-white/15'
+                            ? 'bg-zinc-800/80 border-emerald-500/40 ring-1 ring-emerald-500/30'
+                            : 'bg-white/[0.02] hover:bg-white/[0.05] border-white/[0.06] hover:border-white/12'
                         }`}
                       >
-                        <div className="space-y-1">
+                        <div className="space-y-0.5">
                           <div className="flex items-center space-x-2">
                             <span
-                              className="w-3 h-3 rounded-full inline-block shadow-md border border-white/20"
+                              className="w-2.5 h-2.5 rounded-full inline-block border border-white/20"
                               style={{ backgroundColor: item.palette.trackPrimary }}
                             />
-                            <span className="font-bold text-sm text-white">
+                            <span className="font-semibold text-sm text-zinc-100">
                               {cleanName(item.name)}
                             </span>
                           </div>
-                          <p className="text-[11px] text-slate-400 font-mono pl-5">
+                          <p className="text-[11px] text-zinc-400 font-mono pl-4.5">
                             {item.date}
                           </p>
                         </div>
 
                         {isSelected && (
-                          <div className="flex items-center space-x-1 text-xs font-bold text-emerald-300 bg-emerald-500/15 px-2 py-0.5 rounded-lg border border-emerald-500/30">
+                          <div className="flex items-center space-x-1 text-xs font-semibold text-emerald-300 bg-emerald-500/15 px-2 py-0.5 rounded-md border border-emerald-500/30">
                             <Check className="w-3.5 h-3.5 text-emerald-400 shrink-0" />
                           </div>
                         )}
@@ -267,7 +265,7 @@ export const TrackSelectorModal: React.FC<TrackSelectorModalProps> = ({
 
           {/* Trial Track (Baseline benchmark) */}
           <div>
-            <div className="flex items-center space-x-2 text-xs font-black uppercase tracking-wider text-slate-400 mb-2.5">
+            <div className="flex items-center space-x-2 text-xs font-bold uppercase tracking-wider text-zinc-400 mb-2">
               <span>{t.baselineTrial}</span>
             </div>
             <button
@@ -275,24 +273,24 @@ export const TrackSelectorModal: React.FC<TrackSelectorModalProps> = ({
                 onSelectLevel('trial-level-1');
                 onClose();
               }}
-              className={`w-full text-left p-4 rounded-2xl border transition-all duration-200 flex items-center justify-between cursor-pointer active:scale-[0.99] ${
+              className={`w-full text-left p-3.5 rounded-xl border transition-all duration-150 flex items-center justify-between cursor-pointer active:scale-[0.99] ${
                 currentLevelId === 'trial-level-1' || currentLevelId === 'daily-2026-10-09-seed01'
-                  ? 'bg-indigo-950/80 border-indigo-400 shadow-lg shadow-indigo-500/20 ring-1 ring-indigo-500/30'
-                  : 'bg-slate-900/40 hover:bg-slate-900/70 border-white/5 hover:border-white/15'
+                  ? 'bg-zinc-800/80 border-emerald-500/40 ring-1 ring-emerald-500/30'
+                  : 'bg-white/[0.02] hover:bg-white/[0.05] border-white/[0.06] hover:border-white/12'
               }`}
             >
-              <div className="flex items-center space-x-3.5">
-                <span className="w-3.5 h-3.5 rounded-full bg-cyan-400 shadow-md shadow-cyan-400/50 border border-white/30" />
+              <div className="flex items-center space-x-3">
+                <span className="w-3 h-3 rounded-full bg-emerald-400 border border-white/20" />
                 <div>
-                  <div className="font-bold text-white text-sm md:text-base">Neon Dawn</div>
-                  <p className="text-xs text-slate-400 font-medium">
+                  <div className="font-semibold text-white text-sm">Neon Dawn</div>
+                  <p className="text-xs text-zinc-400 font-normal">
                     {t.baselineDesc}
                   </p>
                 </div>
               </div>
 
               {(currentLevelId === 'trial-level-1' || currentLevelId === 'daily-2026-10-09-seed01') && (
-                <div className="flex items-center space-x-1.5 whitespace-nowrap shrink-0 text-xs font-bold text-emerald-300 bg-emerald-500/15 px-3 py-1 rounded-xl border border-emerald-500/30">
+                <div className="flex items-center space-x-1.5 whitespace-nowrap shrink-0 text-xs font-semibold text-emerald-300 bg-emerald-500/15 px-3 py-1 rounded-lg border border-emerald-500/30">
                   <Check className="w-4 h-4 text-emerald-400" />
                   <span>{t.selected}</span>
                 </div>
@@ -302,15 +300,14 @@ export const TrackSelectorModal: React.FC<TrackSelectorModalProps> = ({
         </div>
 
         {/* Footer */}
-        <div className="pt-3.5 border-t border-white/10 flex justify-end">
+        <div className="pt-3 border-t border-white/[0.08] flex justify-end">
           <button
             onClick={onClose}
-            className="px-6 py-2.5 rounded-xl bg-white/10 hover:bg-white/15 text-sm font-bold text-white transition active:scale-95 cursor-pointer border border-white/10 shadow-sm"
+            className="px-5 py-2 rounded-xl bg-white/10 hover:bg-white/15 text-xs font-semibold text-white transition active:scale-95 cursor-pointer border border-white/10"
           >
             {t.close}
           </button>
         </div>
-
       </div>
     </div>
   );
