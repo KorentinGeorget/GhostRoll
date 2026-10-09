@@ -17,37 +17,100 @@ interface CanvasViewProps {
 
 function CameraRig({
   target,
+  velocity,
   tilt,
 }: {
   target: [number, number, number];
+  velocity: [number, number, number];
   tilt: { x: number; z: number };
 }) {
-  const currentLookAt = useRef(new THREE.Vector3(target[0], target[1], target[2]));
+  const currentCamPos = useRef(
+    new THREE.Vector3(target[0] - 6, target[1] + 11, target[2] - 11)
+  );
+  const currentLookAt = useRef(
+    new THREE.Vector3(target[0], target[1] + 0.3, target[2])
+  );
+  const currentBank = useRef(0);
+  const currentPitch = useRef(0);
 
   useFrame((state, delta) => {
-    const targetVec = new THREE.Vector3(target[0], target[1], target[2]);
+    // Snap instantly on reset or huge teleport
+    const distToTarget = currentLookAt.current.distanceTo(
+      new THREE.Vector3(target[0], target[1], target[2])
+    );
+    if (distToTarget > 15) {
+      currentLookAt.current.set(target[0], target[1] + 0.3, target[2]);
+      currentCamPos.current.set(target[0] - 6, target[1] + 11, target[2] - 11);
+      currentBank.current = 0;
+      currentPitch.current = 0;
+    }
 
-    // Smoothly track target with slight lookahead
-    currentLookAt.current.lerp(targetVec, Math.min(1, delta * 8));
-
-    // Dynamic camera banking and pitch from player tilt
-    const bankAngle = -(tilt.x / 127) * 0.04;
-    const pitchOffset = (tilt.z / 127) * 0.5;
-
-    // Isometric chase camera offset (behind and above ball)
-    const desiredCamPos = new THREE.Vector3(
-      currentLookAt.current.x - 6,
-      currentLookAt.current.y + 11,
-      currentLookAt.current.z - 11 + pitchOffset
+    // Velocity-based lookahead (leads into turns smoothly)
+    const lookaheadX = Math.max(-2, Math.min(2, velocity[0] * 0.15));
+    const lookaheadZ = Math.max(-2, Math.min(2, velocity[2] * 0.15));
+    const targetLookAt = new THREE.Vector3(
+      target[0] + lookaheadX,
+      target[1] + 0.3,
+      target[2] + lookaheadZ
     );
 
-    state.camera.position.lerp(desiredCamPos, Math.min(1, delta * 6));
-    state.camera.lookAt(
+    currentLookAt.current.x = THREE.MathUtils.damp(
       currentLookAt.current.x,
-      currentLookAt.current.y + 0.5,
-      currentLookAt.current.z + 1.5
+      targetLookAt.x,
+      6.0,
+      delta
     );
-    state.camera.rotation.z += bankAngle;
+    currentLookAt.current.y = THREE.MathUtils.damp(
+      currentLookAt.current.y,
+      targetLookAt.y,
+      7.0,
+      delta
+    );
+    currentLookAt.current.z = THREE.MathUtils.damp(
+      currentLookAt.current.z,
+      targetLookAt.z,
+      6.0,
+      delta
+    );
+
+    // Smooth banking & pitch from tilt input (damped to prevent snapping on key press/release)
+    const targetBank = -(tilt.x / 127) * 0.035;
+    const targetPitch = (tilt.z / 127) * 0.4;
+    currentBank.current = THREE.MathUtils.damp(currentBank.current, targetBank, 4.5, delta);
+    currentPitch.current = THREE.MathUtils.damp(currentPitch.current, targetPitch, 4.5, delta);
+
+    // Dynamic speed zoom: slightly pull back at high velocity for better situational awareness
+    const horizontalSpeed = Math.sqrt(velocity[0] * velocity[0] + velocity[2] * velocity[2]);
+    const speedZoom = Math.min(2.5, horizontalSpeed * 0.12);
+
+    const targetCamPos = new THREE.Vector3(
+      currentLookAt.current.x - 6 - speedZoom * 0.35,
+      currentLookAt.current.y + 11 + speedZoom * 0.5,
+      currentLookAt.current.z - 11 - speedZoom * 0.5 + currentPitch.current
+    );
+
+    currentCamPos.current.x = THREE.MathUtils.damp(
+      currentCamPos.current.x,
+      targetCamPos.x,
+      5.0,
+      delta
+    );
+    currentCamPos.current.y = THREE.MathUtils.damp(
+      currentCamPos.current.y,
+      targetCamPos.y,
+      5.0,
+      delta
+    );
+    currentCamPos.current.z = THREE.MathUtils.damp(
+      currentCamPos.current.z,
+      targetCamPos.z,
+      5.0,
+      delta
+    );
+
+    state.camera.position.copy(currentCamPos.current);
+    state.camera.lookAt(currentLookAt.current);
+    state.camera.rotation.z += currentBank.current;
   });
 
   return null;
@@ -100,7 +163,7 @@ export const CanvasView: React.FC<CanvasViewProps> = ({
       <GhostMesh position={ghostPos} />
 
       {/* Dynamic Camera tracking */}
-      <CameraRig target={ballPos} tilt={tilt} />
+      <CameraRig target={ballPos} velocity={ballVel} tilt={tilt} />
     </Canvas>
   );
 };
