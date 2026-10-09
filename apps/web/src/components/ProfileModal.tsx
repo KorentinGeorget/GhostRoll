@@ -136,10 +136,7 @@ export const ProfileModal: React.FC<ProfileModalProps> = ({
             </div>
             <div>
               <div className="flex items-center space-x-2">
-                <h2 className="text-xl md:text-2xl font-black text-white tracking-wide">{t.profileTitle}</h2>
-                <span className="text-[10px] font-black uppercase px-2 py-0.5 rounded-full bg-purple-500/20 text-purple-300 border border-purple-500/30">
-                  Cloud
-                </span>
+                <h2 className="text-lg md:text-xl font-black text-white tracking-wide">{t.profileTitle}</h2>
               </div>
               <p className="text-xs text-slate-400 font-medium">{t.profileDesc}</p>
             </div>

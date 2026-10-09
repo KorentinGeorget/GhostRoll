@@ -493,6 +493,7 @@ export const App: React.FC = () => {
         entries={leaderboard}
         loading={leaderboardLoading}
         selectedGhostRunId={selectedLeaderboardGhost?.runId}
+        lang={lang}
         onSelectGhost={(entry) => {
           setSelectedLeaderboardGhost(entry);
           setActiveGhostSource('leaderboard');

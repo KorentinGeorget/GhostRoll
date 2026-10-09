@@ -2,6 +2,7 @@ import React from 'react';
 import { LeaderboardEntry } from '../api/client.js';
 import { Trophy, X, Play, CheckCircle2, Award, Flame } from 'lucide-react';
 import { TICKS_PER_SECOND } from '@ghostroll/shared';
+import { Language } from '../i18n/translations.js';
 
 interface LeaderboardModalProps {
   isOpen: boolean;
@@ -10,6 +11,7 @@ interface LeaderboardModalProps {
   loading: boolean;
   selectedGhostRunId?: string;
   onSelectGhost: (entry: LeaderboardEntry) => void;
+  lang?: Language;
 }
 
 function formatLeaderboardTime(ticks: number): string {
@@ -27,8 +29,10 @@ export const LeaderboardModal: React.FC<LeaderboardModalProps> = ({
   loading,
   selectedGhostRunId,
   onSelectGhost,
+  lang = 'en',
 }) => {
   if (!isOpen) return null;
+  const fr = lang === 'fr';
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/75 backdrop-blur-xl pointer-events-auto animate-in fade-in duration-200">
@@ -44,12 +48,12 @@ export const LeaderboardModal: React.FC<LeaderboardModalProps> = ({
             </div>
             <div>
               <div className="flex items-center space-x-2">
-                <h2 className="text-xl md:text-2xl font-black text-white tracking-wide">Global Leaderboard</h2>
+                <h2 className="text-xl md:text-2xl font-black text-white tracking-wide">{fr ? 'Classement mondial' : 'Global Leaderboard'}</h2>
                 <span className="text-[10px] font-black uppercase px-2 py-0.5 rounded-full bg-indigo-500/20 text-indigo-300 border border-indigo-500/30">
                   Live
                 </span>
               </div>
-              <p className="text-xs text-slate-400 font-medium">Server-verified deterministic runs</p>
+              <p className="text-xs text-slate-400 font-medium">{fr ? 'Runs déterministes vérifiés par le serveur' : 'Server-verified deterministic runs'}</p>
             </div>
           </div>
           <button
@@ -65,15 +69,15 @@ export const LeaderboardModal: React.FC<LeaderboardModalProps> = ({
           {loading ? (
             <div className="py-16 flex flex-col items-center justify-center space-y-3">
               <div className="w-10 h-10 rounded-full border-3 border-indigo-400 border-t-transparent animate-spin shadow-lg shadow-indigo-500/20" />
-              <p className="text-xs text-slate-400 font-medium animate-pulse">Fetching verified times...</p>
+              <p className="text-xs text-slate-400 font-medium animate-pulse">{fr ? 'Chargement des temps vérifiés...' : 'Fetching verified times...'}</p>
             </div>
           ) : entries.length === 0 ? (
             <div className="py-14 text-center px-4">
               <div className="w-12 h-12 mx-auto mb-3 rounded-2xl bg-white/5 border border-white/10 flex items-center justify-center text-amber-400">
                 <Award className="w-6 h-6" />
               </div>
-              <p className="text-white font-bold text-sm mb-1">No verified times yet today</p>
-              <p className="text-xs text-slate-400">Be the first to cross the finish line and set a record!</p>
+              <p className="text-white font-bold text-sm mb-1">{fr ? 'Aucun temps vérifié pour le moment' : 'No verified times yet today'}</p>
+              <p className="text-xs text-slate-400">{fr ? 'Franchis la ligne en premier et pose un record !' : 'Be the first to cross the finish line and set a record!'}</p>
             </div>
           ) : (
             entries.map((entry) => {
@@ -142,7 +146,7 @@ export const LeaderboardModal: React.FC<LeaderboardModalProps> = ({
                         }`}
                       >
                         <Play className="w-3.5 h-3.5 fill-current" />
-                        <span className="hidden sm:inline text-[11px]">{isSelected ? 'Active' : 'Race'}</span>
+                        <span className="hidden sm:inline text-[11px]">{isSelected ? (fr ? 'Actif' : 'Active') : (fr ? 'Défier' : 'Race')}</span>
                       </button>
                     )}
                   </div>
@@ -156,13 +160,13 @@ export const LeaderboardModal: React.FC<LeaderboardModalProps> = ({
         <div className="mt-4 pt-3.5 border-t border-white/10 text-[11px] text-slate-400 font-medium flex items-center justify-between">
           <span className="flex items-center space-x-1.5">
             <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 inline-block" />
-            <span>Top ghost replays load automatically</span>
+            <span>{fr ? 'Les meilleurs fantômes se chargent automatiquement' : 'Top ghost replays load automatically'}</span>
           </span>
           <button
             onClick={onClose}
             className="px-5 py-2 rounded-xl bg-white/10 hover:bg-white/15 text-white font-bold transition active:scale-95 cursor-pointer border border-white/10 shadow-sm"
           >
-            Close
+            {fr ? 'Fermer' : 'Close'}
           </button>
         </div>
       </div>

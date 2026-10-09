@@ -55,6 +55,8 @@ interface HUDProps {
   onToggleMute?: () => void;
 }
 
+const cleanName = (n: string) => n.replace(/\s*\(Daily[^)]*\)\s*$/, '');
+
 function formatTime(ticks: number): string {
   const totalSeconds = ticks / TICKS_PER_SECOND;
   const mins = Math.floor(totalSeconds / 60);
@@ -128,37 +130,37 @@ export const HUD: React.FC<HUDProps> = ({
       <div className="flex items-start justify-between w-full pointer-events-auto gap-3">
         {/* TOP LEFT: Brand & Course Capsule */}
         <div className="flex items-center space-x-2">
-          <div className="glass-panel-elevated rounded-2xl px-4 py-2 flex items-center space-x-3 border border-white/10 shadow-xl">
+          <div className="glass-panel-elevated rounded-2xl px-3 sm:px-4 py-2.5 sm:py-2 flex items-center space-x-3 border border-white/10 shadow-xl">
             <div className="flex items-center space-x-2">
-              <h1 className="text-lg md:text-xl font-black tracking-wider bg-gradient-to-r from-cyan-400 via-sky-300 to-indigo-400 bg-clip-text text-transparent drop-shadow-[0_0_12px_rgba(56,189,248,0.5)]">
+              <h1 className="text-sm sm:text-lg md:text-xl font-black tracking-wider bg-gradient-to-r from-cyan-400 via-sky-300 to-indigo-400 bg-clip-text text-transparent drop-shadow-[0_0_12px_rgba(56,189,248,0.5)]">
                 GHOSTROLL
               </h1>
-              <span className="flex items-center space-x-1 text-[9px] uppercase font-black px-1.5 py-0.5 rounded-full bg-emerald-500/20 text-emerald-300 border border-emerald-500/30">
+              <span className="hidden sm:flex items-center space-x-1 text-[9px] uppercase font-black px-1.5 py-0.5 rounded-full bg-emerald-500/20 text-emerald-300 border border-emerald-500/30">
                 <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse" />
                 <span>v0.4</span>
               </span>
             </div>
 
-            <span className="text-white/20">|</span>
+            <span className="text-white/20 hidden sm:inline">|</span>
 
             {/* Course Selector Dropdown Button */}
             <button
               onClick={onOpenTrackSelector}
-              className="flex items-center space-x-1.5 text-xs text-slate-300 hover:text-white font-semibold transition group cursor-pointer"
+              className="hidden sm:flex items-center space-x-1.5 text-xs text-slate-300 hover:text-white font-semibold transition group cursor-pointer"
             >
               <span className="text-slate-400 hidden sm:inline">{t.track}:</span>
-              <span className="text-cyan-300 font-bold group-hover:text-cyan-200">{levelName}</span>
+              <span className="text-cyan-300 font-bold group-hover:text-cyan-200">{cleanName(levelName)}</span>
               <ChevronDown className="w-3.5 h-3.5 text-slate-400 group-hover:translate-y-0.5 transition-transform" />
             </button>
           </div>
         </div>
 
         {/* TOP RIGHT: Player Profile & Quick Navigation Pills */}
-        <div className="flex items-center space-x-2">
+        <div className="flex items-center space-x-1.5 sm:space-x-2">
           {/* User Profile Pill (Google or Guest) */}
           <button
             onClick={onOpenProfile}
-            className="glass-panel-elevated rounded-2xl px-3.5 py-2 flex items-center space-x-2 text-xs font-bold text-slate-200 hover:text-white transition shadow-lg cursor-pointer border border-white/10 active:scale-95"
+            className="glass-panel-elevated rounded-2xl px-2.5 sm:px-3.5 py-2 flex items-center space-x-2 text-xs font-bold text-slate-200 hover:text-white transition shadow-lg cursor-pointer border border-white/10 active:scale-95"
           >
             {userAvatarUrl ? (
               <img
@@ -171,7 +173,7 @@ export const HUD: React.FC<HUDProps> = ({
                 <UserIcon className="w-3 h-3" />
               </div>
             )}
-            <span className="truncate max-w-[110px] md:max-w-[150px]">
+            <span className="hidden sm:inline truncate max-w-[110px] md:max-w-[150px]">
               {userDisplayName || t.profile}
             </span>
             {isGoogleLinked && (
@@ -199,6 +201,15 @@ export const HUD: React.FC<HUDProps> = ({
             <span className="hidden sm:inline">{t.leaderboard}</span>
           </button>
 
+          {/* Mobile quick restart */}
+          <button
+            onClick={onRestart}
+            className="md:hidden glass-panel rounded-2xl p-2 text-slate-300 transition shadow-md cursor-pointer border border-white/10 active:scale-95"
+            title={t.resetRun}
+          >
+            <RotateCcw className="w-4 h-4 text-slate-300" />
+          </button>
+
           {/* Sound Toggle */}
           {onToggleMute && (
             <button
@@ -219,8 +230,8 @@ export const HUD: React.FC<HUDProps> = ({
       {/* =========================================================================
           TOP CENTER: Pure Athletic Chrono & Dynamic Telemetry Halo
          ========================================================================= */}
-      <div className="self-center flex flex-col items-center mt-2 pointer-events-auto">
-        <div className="glass-panel-elevated rounded-3xl px-8 py-3.5 flex flex-col items-center border border-white/10 shadow-2xl relative overflow-hidden backdrop-blur-2xl">
+      <div className="absolute left-1/2 -translate-x-1/2 top-20 lg:top-4 flex flex-col items-center pointer-events-auto z-10">
+        <div className="glass-panel-elevated rounded-3xl px-5 sm:px-8 py-2.5 sm:py-3.5 flex flex-col items-center border border-white/10 shadow-2xl relative overflow-hidden backdrop-blur-2xl">
           {/* Subtle Ambient Accent Beam */}
           <div className="absolute inset-x-0 top-0 h-[2px] bg-gradient-to-r from-transparent via-cyan-400 to-transparent opacity-80" />
 
@@ -241,16 +252,16 @@ export const HUD: React.FC<HUDProps> = ({
           </div>
 
           {/* Live Speed Bar & Telemetry Sub-capsule */}
-          <div className="flex items-center space-x-3 mt-1.5 text-xs font-mono">
+          <div className="flex items-center space-x-3 mt-1.5 text-xs font-mono whitespace-nowrap">
             <span className="text-cyan-400 font-black flex items-center space-x-1">
               <span>⚡</span>
               <span>{speedKmh.toFixed(1)} {t.kmh}</span>
             </span>
 
-            <span className="text-slate-600">•</span>
+            <span className="text-slate-600 hidden sm:inline">•</span>
 
             {/* Personal Best comparison chip */}
-            <div className="flex items-center space-x-1 text-slate-300">
+            <div className="hidden sm:flex items-center space-x-1 text-slate-300">
               <span className="text-[10px] text-slate-400 font-bold uppercase">PB:</span>
               <span className="font-bold text-slate-200">
                 {personalBest ? formatTime(personalBest.ticks) : t.noRecordYet}
@@ -279,17 +290,16 @@ export const HUD: React.FC<HUDProps> = ({
           CENTER / LOWER-THIRD: Pre-game "Ready?" Prompt (Disappears when rolling)
          ========================================================================= */}
       {tick === 0 && status === 'ready' && (
-        <div className="self-center my-auto glass-panel-elevated rounded-3xl p-6 md:p-8 max-w-md w-full text-center pointer-events-auto border border-cyan-400/30 shadow-2xl animate-in fade-in duration-300 relative overflow-hidden">
-          <div className="absolute inset-x-0 top-0 h-1 bg-gradient-to-r from-cyan-400 via-sky-300 to-indigo-500" />
-          <div className="text-3xl mb-2">⚡</div>
-          <h2 className="text-2xl font-black text-white tracking-wide mb-1">
+        <div className="absolute left-1/2 -translate-x-1/2 bottom-52 md:bottom-24 glass-panel-elevated rounded-2xl px-6 py-4 w-[min(92vw,34rem)] text-center pointer-events-none border border-cyan-400/30 shadow-2xl animate-in fade-in duration-300 overflow-hidden">
+          <div className="absolute inset-x-0 top-0 h-[2px] bg-gradient-to-r from-cyan-400 via-sky-300 to-indigo-500" />
+          <h2 className="text-lg font-black text-white tracking-widest mb-0.5">
             {lang === 'fr' ? 'PRÊT ?' : 'READY?'}
           </h2>
-          <p className="text-cyan-300 text-sm font-bold animate-pulse mb-4">
+          <p className="text-cyan-300 text-sm font-bold animate-pulse mb-3">
             {t.tiltToStart}
           </p>
 
-          <div className="hidden md:flex items-center justify-center space-x-3 text-xs text-slate-300 bg-slate-950/60 p-3 rounded-2xl border border-white/10">
+          <div className="hidden md:flex items-center justify-center space-x-3 text-xs text-slate-300">
             <span className="flex items-center space-x-1.5">
               <kbd className="keycap px-2 py-0.5 rounded font-mono text-[11px] text-white">WASD</kbd>
               <span className="text-slate-400">/</span>
@@ -428,55 +438,17 @@ export const HUD: React.FC<HUDProps> = ({
       )}
 
       {/* =========================================================================
-          BOTTOM BAR: Discreet security fingerprint & quick restart
+          BOTTOM BAR (desktop): determinism fingerprint & restart
          ========================================================================= */}
-      <div className="flex items-center justify-between pointer-events-auto w-full gap-2">
-        {/* Left: Engine Determinism & Cryptographic Hash Fingerprint */}
-        <div className="flex items-center space-x-2">
-          <div className="glass-panel rounded-xl px-3 py-1.5 flex items-center space-x-2 text-[10px] text-slate-400 font-mono border border-white/5">
-            <Hash className="w-3 h-3 text-cyan-400" />
-            <span className="text-slate-400 hidden sm:inline">{t.stateHash}:</span>
-            <span className="text-cyan-300 font-bold tracking-tight">{stateHash}</span>
-            <span className="text-slate-600">•</span>
-            <span className="text-emerald-400 font-bold">60Hz</span>
-          </div>
-
-          {/* Mobile Gyro Controls */}
-          {gyroSupported && onToggleGyro && (
-            <div className="flex items-center space-x-1.5">
-              <button
-                onClick={onToggleGyro}
-                className={`glass-pill rounded-xl px-3 py-1.5 text-xs font-bold transition flex items-center space-x-1.5 cursor-pointer active:scale-95 ${
-                  gyroActive ? 'glass-pill-active text-purple-200' : 'text-slate-300 hover:text-white'
-                }`}
-              >
-                {gyroActive ? (
-                  <>
-                    <Smartphone className="w-3.5 h-3.5 text-purple-300 animate-pulse" />
-                    <span>{t.gyroMode}</span>
-                  </>
-                ) : (
-                  <>
-                    <Gamepad2 className="w-3.5 h-3.5 text-slate-400" />
-                    <span>{t.touchMode}</span>
-                  </>
-                )}
-              </button>
-
-              {gyroActive && onCalibrateGyro && (
-                <button
-                  onClick={onCalibrateGyro}
-                  className="glass-pill rounded-xl px-2.5 py-1.5 text-xs font-bold text-emerald-300 hover:text-emerald-200 transition flex items-center space-x-1 cursor-pointer active:scale-95"
-                >
-                  <RotateCcw className="w-3 h-3" />
-                  <span>{t.calibrateGyro}</span>
-                </button>
-              )}
-            </div>
-          )}
+      <div className="hidden md:flex items-center justify-between pointer-events-auto w-full gap-2">
+        <div className="glass-panel rounded-xl px-3 py-1.5 flex items-center space-x-2 text-[10px] text-slate-400 font-mono border border-white/5">
+          <Hash className="w-3 h-3 text-cyan-400" />
+          <span className="text-slate-400">{t.stateHash}:</span>
+          <span className="text-cyan-300 font-bold tracking-tight">{stateHash}</span>
+          <span className="text-slate-600">•</span>
+          <span className="text-emerald-400 font-bold">60Hz</span>
         </div>
 
-        {/* Right: Quick Restart Button */}
         <button
           onClick={onRestart}
           className="glass-panel rounded-xl px-3.5 py-1.5 hover:bg-white/10 text-xs font-bold text-slate-300 hover:text-white transition flex items-center space-x-1.5 border border-white/10 shadow-md cursor-pointer active:scale-95"
@@ -484,9 +456,37 @@ export const HUD: React.FC<HUDProps> = ({
         >
           <RotateCcw className="w-3.5 h-3.5 text-slate-400" />
           <span>{t.resetRun}</span>
-          <span className="hidden sm:inline text-slate-500 font-mono text-[10px]">(R)</span>
+          <span className="text-slate-500 font-mono text-[10px]">(R)</span>
         </button>
       </div>
+
+      {/* Mobile: compact gyro toggle between joystick (left) and jump (right) */}
+      {gyroSupported && onToggleGyro && (
+        <div className="md:hidden absolute bottom-6 left-1/2 -translate-x-1/2 flex items-center space-x-1.5 pointer-events-auto z-20">
+          <button
+            onClick={onToggleGyro}
+            className={`glass-pill rounded-2xl p-3 transition cursor-pointer active:scale-95 ${
+              gyroActive ? 'glass-pill-active text-purple-200' : 'text-slate-300'
+            }`}
+            title={gyroActive ? t.gyroMode : t.touchMode}
+          >
+            {gyroActive ? (
+              <Smartphone className="w-5 h-5 text-purple-300 animate-pulse" />
+            ) : (
+              <Gamepad2 className="w-5 h-5 text-slate-300" />
+            )}
+          </button>
+          {gyroActive && onCalibrateGyro && (
+            <button
+              onClick={onCalibrateGyro}
+              className="glass-pill rounded-2xl p-3 text-emerald-300 transition cursor-pointer active:scale-95"
+              title={t.calibrateGyro}
+            >
+              <RotateCcw className="w-5 h-5" />
+            </button>
+          )}
+        </div>
+      )}
     </div>
   );
 };

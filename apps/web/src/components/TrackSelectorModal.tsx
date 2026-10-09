@@ -16,6 +16,8 @@ interface TrackSelectorModalProps {
   lang?: Language;
 }
 
+const cleanName = (n: string) => n.replace(/\s*\(Daily[^)]*\)\s*$/, '');
+
 export const TrackSelectorModal: React.FC<TrackSelectorModalProps> = ({
   isOpen,
   onClose,
@@ -87,11 +89,11 @@ export const TrackSelectorModal: React.FC<TrackSelectorModalProps> = ({
                     <Calendar className="w-5 h-5" />
                   </div>
                   <div>
-                    <div className="flex items-center space-x-2">
+                    <div className="flex items-center flex-wrap gap-2">
                       <span className="font-black text-white text-base md:text-lg tracking-tight">
-                        {dailyName || 'Daily Challenge'}
+                        {cleanName(dailyName || 'Daily Challenge')}
                       </span>
-                      <span className="flex items-center space-x-1 text-[10px] uppercase font-black tracking-wider px-2 py-0.5 rounded-full bg-emerald-500/20 text-emerald-300 border border-emerald-500/40">
+                      <span className="flex items-center space-x-1 whitespace-nowrap shrink-0 text-[10px] uppercase font-black tracking-wider px-2 py-0.5 rounded-full bg-emerald-500/20 text-emerald-300 border border-emerald-500/40">
                         <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse" />
                         <span>{t.activeToday}</span>
                       </span>
@@ -103,7 +105,7 @@ export const TrackSelectorModal: React.FC<TrackSelectorModalProps> = ({
                 </div>
 
                 {currentLevelId === dailyLevelId && (
-                  <div className="flex items-center space-x-1.5 text-xs font-bold text-emerald-300 bg-emerald-500/15 px-3 py-1 rounded-xl border border-emerald-500/30">
+                  <div className="flex items-center space-x-1.5 whitespace-nowrap shrink-0 text-xs font-bold text-emerald-300 bg-emerald-500/15 px-3 py-1 rounded-xl border border-emerald-500/30">
                     <Check className="w-4 h-4 text-emerald-400" />
                     <span>{t.selected}</span>
                   </div>
@@ -150,7 +152,7 @@ export const TrackSelectorModal: React.FC<TrackSelectorModalProps> = ({
                               style={{ backgroundColor: item.palette.trackPrimary }}
                             />
                             <span className="font-bold text-sm text-white">
-                              {item.name}
+                              {cleanName(item.name)}
                             </span>
                           </div>
                           <p className="text-[11px] text-slate-400 font-mono pl-5">
@@ -197,7 +199,7 @@ export const TrackSelectorModal: React.FC<TrackSelectorModalProps> = ({
               </div>
 
               {(currentLevelId === 'trial-level-1' || currentLevelId === 'daily-2026-10-09-seed01') && (
-                <div className="flex items-center space-x-1.5 text-xs font-bold text-emerald-300 bg-emerald-500/15 px-3 py-1 rounded-xl border border-emerald-500/30">
+                <div className="flex items-center space-x-1.5 whitespace-nowrap shrink-0 text-xs font-bold text-emerald-300 bg-emerald-500/15 px-3 py-1 rounded-xl border border-emerald-500/30">
                   <Check className="w-4 h-4 text-emerald-400" />
                   <span>{t.selected}</span>
                 </div>
