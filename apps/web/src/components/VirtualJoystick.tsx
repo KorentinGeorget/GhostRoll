@@ -54,29 +54,29 @@ export const VirtualJoystick: React.FC<VirtualJoystickProps> = ({ onTiltChange }
   };
 
   return (
-    <div className="absolute bottom-6 right-6 pointer-events-auto md:hidden">
+    <div className="absolute bottom-6 left-6 pointer-events-auto md:hidden z-20">
       <div
         ref={containerRef}
         onPointerDown={handlePointerDown}
         onPointerMove={handlePointerMove}
         onPointerUp={handlePointerUp}
         onPointerCancel={handlePointerUp}
-        className="w-32 h-32 rounded-full glass-panel flex items-center justify-center relative touch-none select-none border border-white/20 shadow-2xl active:scale-95 transition-transform"
+        className="w-32 h-32 rounded-full glass-panel-elevated flex items-center justify-center relative touch-none select-none border border-white/20 shadow-2xl active:scale-95 transition-transform"
       >
         {/* Center rest ring */}
-        <div className="w-12 h-12 rounded-full border border-white/20" />
+        <div className="w-12 h-12 rounded-full border border-white/20 bg-white/5" />
 
         {/* Floating thumb stick */}
         <div
           style={{
             transform: `translate(${stickPos.x}px, ${stickPos.y}px)`,
           }}
-          className="w-14 h-14 rounded-full bg-gradient-to-tr from-indigo-500 to-sky-400 shadow-lg absolute pointer-events-none transition-transform duration-75 flex items-center justify-center"
+          className="w-14 h-14 rounded-full bg-gradient-to-tr from-indigo-500 via-sky-400 to-cyan-300 shadow-xl shadow-sky-500/30 absolute pointer-events-none transition-transform duration-75 flex items-center justify-center border border-white/40"
         >
-          <div className="w-4 h-4 rounded-full bg-white/60" />
+          <div className="w-4 h-4 rounded-full bg-white/80 shadow-sm" />
         </div>
       </div>
-      <div className="text-center text-[10px] text-slate-400 mt-2 font-medium">Touch Joystick</div>
+      <div className="text-center text-[10px] text-slate-300/80 mt-1.5 font-bold tracking-wider uppercase">Joystick</div>
     </div>
   );
 };

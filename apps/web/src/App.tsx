@@ -525,11 +525,11 @@ export const App: React.FC = () => {
       {/* Floating Jump Button for Mobile */}
       <button
         onClick={triggerJump}
-        className="md:hidden absolute bottom-6 right-6 z-20 w-16 h-16 rounded-2xl glass-panel flex flex-col items-center justify-center pointer-events-auto active:scale-90 transition-transform bg-sky-500/25 border-sky-400/40 text-sky-200 shadow-2xl backdrop-blur-md select-none touch-none"
+        className="md:hidden absolute bottom-6 right-6 z-20 w-18 h-18 rounded-3xl glass-panel-elevated flex flex-col items-center justify-center pointer-events-auto active:scale-90 transition-transform bg-gradient-to-br from-cyan-500/25 to-indigo-600/30 border border-cyan-400/50 text-cyan-200 shadow-2xl shadow-cyan-500/20 select-none touch-none ring-2 ring-cyan-400/20 cursor-pointer"
         aria-label="Jump"
       >
-        <span className="text-lg leading-none font-black">▲</span>
-        <span className="text-[10px] font-extrabold uppercase tracking-wider mt-0.5">
+        <span className="text-xl leading-none font-black drop-shadow-[0_0_6px_rgba(56,189,248,0.7)]">▲</span>
+        <span className="text-[10px] font-black uppercase tracking-widest mt-1">
           {lang === 'fr' ? 'SAUT' : 'JUMP'}
         </span>
       </button>
