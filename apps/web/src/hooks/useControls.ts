@@ -5,6 +5,7 @@ export interface ControlsState {
   getInput: () => InputFrame;
   setVirtualTilt: (x: number, z: number) => void;
   triggerJump: () => void;
+  resetTilt: () => void;
   rawTilt: { x: number; z: number };
   gyroSupported: boolean;
   gyroActive: boolean;
@@ -208,6 +209,15 @@ export function useControls(): ControlsState {
     jumpRequested.current = true;
   }, []);
 
+  const resetTilt = useCallback(() => {
+    currentTilt.current = { x: 0, z: 0 };
+    virtualTilt.current = { x: 0, z: 0 };
+    gyroTilt.current = { x: 0, z: 0 };
+    jumpRequested.current = false;
+    keysDown.current = {};
+    setDebugTilt({ x: 0, z: 0 });
+  }, []);
+
   // Periodic debug display sync
   useEffect(() => {
     const interval = setInterval(() => {
@@ -232,6 +242,7 @@ export function useControls(): ControlsState {
     getInput,
     setVirtualTilt,
     triggerJump,
+    resetTilt,
     rawTilt: debugTilt,
     gyroSupported,
     gyroActive,

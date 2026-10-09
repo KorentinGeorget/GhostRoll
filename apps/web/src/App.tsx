@@ -109,6 +109,7 @@ export const App: React.FC = () => {
     getInput,
     setVirtualTilt,
     triggerJump,
+    resetTilt,
     rawTilt,
     gyroSupported,
     gyroActive,
@@ -137,6 +138,7 @@ export const App: React.FC = () => {
   const handleRestart = useCallback(() => {
     if (!simRef.current) return;
     simRef.current.reset();
+    resetTilt();
     recordedInputs.current = [];
     recordedSamples.current = [];
     hasWonRef.current = false;
@@ -149,7 +151,7 @@ export const App: React.FC = () => {
     setRenderPos(initial.ball.position);
     setRenderVel(initial.ball.velocity);
     setGhostRenderPos(null);
-  }, []);
+  }, [resetTilt]);
 
 
   // Track selection handler
@@ -281,13 +283,19 @@ export const App: React.FC = () => {
       while (accumulator >= FIXED_DT) {
         if (state.status !== 'won' && state.status !== 'dead') {
           const input = getInput();
-          recordedInputs.current.push(input);
 
           if (input.jump) {
             soundFX.playJump();
           }
 
-          state = sim.step(input);
+          const newState = sim.step(input);
+
+          // Only record active frames (eliminates idle jitter before start)
+          if (newState.status === 'playing' || newState.status === 'won') {
+            recordedInputs.current.push(input);
+          }
+
+          state = newState;
 
           // Sample ghost trajectory at 20Hz (every 3 ticks)
           if (state.tick % 3 === 0) {
