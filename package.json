@@ -9,6 +9,8 @@
     "build": "pnpm --filter @ghostroll/shared build && pnpm --filter @ghostroll/sim build && pnpm --filter @ghostroll/server build && pnpm --filter @ghostroll/web build",
     "test": "pnpm --filter @ghostroll/sim test && pnpm --filter @ghostroll/server test",
     "test:e2e": "playwright test",
+    "docker:dev": "docker compose -f docker-compose.dev.yml up",
+    "docker:dev:down": "docker compose -f docker-compose.dev.yml down",
     "lint": "echo 'No linter configured yet'"
   },
   "devDependencies": {

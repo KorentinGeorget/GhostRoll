@@ -1,0 +1,69 @@
+services:
+  db:
+    image: postgres:16-alpine
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: ghostroll
+      POSTGRES_USER: ghostroll
+      POSTGRES_PASSWORD: ghostroll_secure_password
+    volumes:
+      - pgdata-dev:/var/lib/postgresql/data:z
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ghostroll -d ghostroll"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+    ports:
+      - "5432:5432"
+
+  server:
+    build:
+      context: .
+      dockerfile: Dockerfile.dev
+    restart: unless-stopped
+    depends_on:
+      db:
+        condition: service_healthy
+    environment:
+      NODE_ENV: development
+      PORT: 3001
+      HOST: 0.0.0.0
+      DATABASE_URL: postgres://ghostroll:ghostroll_secure_password@db:5432/ghostroll
+      COOKIE_SECRET: ghostroll-dev-secret-key-32-chars-min
+      GOOGLE_CLIENT_ID: ${GOOGLE_CLIENT_ID:-}
+      GOOGLE_CLIENT_SECRET: ${GOOGLE_CLIENT_SECRET:-}
+    volumes:
+      - .:/app:z
+      - /app/node_modules
+      - /app/packages/shared/node_modules
+      - /app/packages/sim/node_modules
+      - /app/apps/server/node_modules
+      - /app/apps/web/node_modules
+    ports:
+      - "3001:3001"
+    command: pnpm --filter @ghostroll/server dev
+
+  web:
+    build:
+      context: .
+      dockerfile: Dockerfile.dev
+    restart: unless-stopped
+    depends_on:
+      - server
+    environment:
+      NODE_ENV: development
+      VITE_API_URL: http://server:3001
+      CHOKIDAR_USEPOLLING: "true"
+    volumes:
+      - .:/app:z
+      - /app/node_modules
+      - /app/packages/shared/node_modules
+      - /app/packages/sim/node_modules
+      - /app/apps/server/node_modules
+      - /app/apps/web/node_modules
+    ports:
+      - "5173:5173"
+    command: pnpm --filter @ghostroll/web dev --host 0.0.0.0 --port 5173
+
+volumes:
+  pgdata-dev:
