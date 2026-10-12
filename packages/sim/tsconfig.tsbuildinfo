@@ -1,1 +1,1 @@
-{"root":["./src/generator.ts","./src/index.ts","./src/level.ts","./src/math.ts","./src/palette.ts","./src/prng.ts","./src/sim.ts","./src/state-hash.ts"],"version":"5.9.3"}
+{"root":["./src/customTrack.ts","./src/generator.ts","./src/index.ts","./src/level.ts","./src/math.ts","./src/palette.ts","./src/prng.ts","./src/sim.ts","./src/state-hash.ts"],"version":"5.9.3"}

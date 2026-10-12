@@ -20,6 +20,7 @@ import {
   VolumeX,
   Gauge,
   Flag,
+  PenTool,
 } from 'lucide-react';
 
 interface HUDProps {
@@ -53,6 +54,9 @@ interface HUDProps {
   isCalibrated?: boolean;
   isMuted?: boolean;
   onToggleMute?: () => void;
+  onOpenEditor?: () => void;
+  isTestDrive?: boolean;
+  onBackToEditor?: () => void;
 }
 
 const cleanName = (n: string) => n.replace(/\s*\(Daily[^)]*\)\s*$/, '');
@@ -96,6 +100,9 @@ export const HUD: React.FC<HUDProps> = ({
   isCalibrated: _isCalibrated,
   isMuted = false,
   onToggleMute,
+  onOpenEditor,
+  isTestDrive,
+  onBackToEditor,
 }) => {
   const t = TRANSLATIONS[lang];
   const [copiedShare, setCopiedShare] = useState(false);
@@ -198,6 +205,18 @@ export const HUD: React.FC<HUDProps> = ({
             <span className="hidden sm:inline">{t.leaderboard}</span>
           </button>
 
+          {/* Track Editor Button */}
+          {onOpenEditor && (
+            <button
+              onClick={onOpenEditor}
+              className="glass-pill px-3 py-2 rounded-xl flex items-center space-x-1.5 text-xs font-semibold text-cyan-300 hover:text-white hover:bg-cyan-500/10 transition cursor-pointer border border-cyan-500/30 shadow-sm shadow-cyan-500/10"
+              title={t.trackEditor}
+            >
+              <PenTool className="w-3.5 h-3.5 text-cyan-400" />
+              <span className="hidden sm:inline">{t.trackEditor}</span>
+            </button>
+          )}
+
           {/* Audio Mute/Unmute */}
           {onToggleMute && (
             <button
@@ -225,6 +244,25 @@ export const HUD: React.FC<HUDProps> = ({
           </button>
         </div>
       </header>
+
+      {/* Floating Test Drive Banner */}
+      {isTestDrive && (
+        <div className="absolute top-16 sm:top-20 left-1/2 -translate-x-1/2 z-40 glass-panel-elevated px-4 py-2 rounded-2xl flex items-center space-x-3 border border-emerald-400/50 shadow-2xl pointer-events-auto animate-in fade-in">
+          <div className="w-2.5 h-2.5 rounded-full bg-emerald-400 animate-pulse" />
+          <span className="text-xs sm:text-sm font-bold text-white tracking-tight">
+            {t.testModeBanner}
+          </span>
+          {onBackToEditor && (
+            <button
+              onClick={onBackToEditor}
+              className="px-3 py-1 rounded-xl bg-gradient-to-r from-cyan-500 to-indigo-500 hover:from-cyan-400 hover:to-indigo-400 text-white font-bold text-xs transition active:scale-95 flex items-center space-x-1 shadow-md cursor-pointer"
+            >
+              <span>{t.backToEditor}</span>
+              <span className="font-mono text-[10px] opacity-75">[Échap]</span>
+            </button>
+          )}
+        </div>
+      )}
 
       {/* =========================================================================
           TOP CENTER: Precision Digital Stopwatch & Telemetry

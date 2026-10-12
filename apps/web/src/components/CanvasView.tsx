@@ -1,6 +1,7 @@
 import React, { useRef } from 'react';
 import { Canvas, useFrame } from '@react-three/fiber';
 import * as THREE from 'three';
+import { OrbitControls } from '@react-three/drei';
 import { LevelDefinition, LevelPalette } from '@ghostroll/shared';
 import { LiveRenderState } from '../types/render.js';
 import { BoardMesh } from './BoardMesh.js';
@@ -16,6 +17,8 @@ interface CanvasViewProps {
   ballVel?: [number, number, number];
   ghostPos?: [number, number, number] | null;
   tilt: { x: number; z: number };
+  mode?: 'race' | 'editor';
+  editorTarget?: [number, number, number];
 }
 
 function CameraRig({
@@ -217,6 +220,8 @@ export const CanvasView: React.FC<CanvasViewProps> = ({
   ballVel,
   ghostPos,
   tilt,
+  mode = 'race',
+  editorTarget,
 }) => {
   const bg = palette?.background || '#090d16';
   const fogColor = palette?.fog || '#090d16';
@@ -242,25 +247,45 @@ export const CanvasView: React.FC<CanvasViewProps> = ({
       {/* Track & props (stationary, exactly matching physics colliders) */}
       <BoardMesh level={level} palette={palette} tilt={tilt} />
 
-      {/* Active player ball with drop shadow and depth indicator */}
-      <BallMesh
-        liveRenderRef={liveRenderRef}
-        position={ballPos}
-        velocity={ballVel}
-        colliders={level.colliders}
-      />
+      {mode === 'editor' ? (
+        <OrbitControls
+          makeDefault
+          enableDamping
+          dampingFactor={0.08}
+          target={
+            editorTarget || [
+              level.goal.position[0] * 0.7,
+              level.goal.position[1] * 0.7,
+              level.goal.position[2] * 0.7,
+            ]
+          }
+          maxPolarAngle={Math.PI / 2 - 0.05}
+          minDistance={4}
+          maxDistance={220}
+        />
+      ) : (
+        <>
+          {/* Active player ball with drop shadow and depth indicator */}
+          <BallMesh
+            liveRenderRef={liveRenderRef}
+            position={ballPos}
+            velocity={ballVel}
+            colliders={level.colliders}
+          />
 
-      {/* Ghost */}
-      <GhostMesh liveRenderRef={liveRenderRef} position={ghostPos} />
+          {/* Ghost */}
+          <GhostMesh liveRenderRef={liveRenderRef} position={ghostPos} />
 
-      {/* Dynamic Camera tracking */}
-      <CameraRig
-        liveRenderRef={liveRenderRef}
-        target={ballPos}
-        velocity={ballVel}
-        tilt={tilt}
-        levelId={level.id}
-      />
+          {/* Dynamic Camera tracking */}
+          <CameraRig
+            liveRenderRef={liveRenderRef}
+            target={ballPos}
+            velocity={ballVel}
+            tilt={tilt}
+            levelId={level.id}
+          />
+        </>
+      )}
     </Canvas>
   );
 };

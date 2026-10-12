@@ -16,9 +16,14 @@ import {
   initPhysics,
   LEVEL_1,
   Simulation,
+  buildCustomLevel,
+  decodeCustomTrack,
+  TRACK_PRESETS,
+  TrackPieceType,
 } from '@ghostroll/sim';
 import { CanvasView } from './components/CanvasView.js';
 import { HUD } from './components/HUD.js';
+import { TrackEditorUI } from './components/TrackEditorUI.js';
 import { VirtualJoystick } from './components/VirtualJoystick.js';
 import { LeaderboardModal } from './components/LeaderboardModal.js';
 import { TrackSelectorModal } from './components/TrackSelectorModal.js';
@@ -80,6 +85,22 @@ export const App: React.FC = () => {
   const [archive, setArchive] = useState<ArchiveItem[]>([]);
   const [archiveLoading, setArchiveLoading] = useState(false);
   const [isTrackSelectorOpen, setIsTrackSelectorOpen] = useState(false);
+
+  // Track Editor state
+  const [isEditorOpen, setIsEditorOpen] = useState(false);
+  const [isTestDrive, setIsTestDrive] = useState(false);
+  const [customPieces, setCustomPieces] = useState<TrackPieceType[]>(
+    () => TRACK_PRESETS[0].pieces
+  );
+  const [customTrackName, setCustomTrackName] = useState('Mon Grand Prix');
+  const [customTrackTheme, setCustomTrackTheme] = useState('cyberpunk');
+
+  const customCompiled = React.useMemo(() => {
+    return buildCustomLevel(customPieces, {
+      name: customTrackName,
+      theme: customTrackTheme,
+    });
+  }, [customPieces, customTrackName, customTrackTheme]);
 
   // User profile & Server sync state
   const [userProfile, setUserProfile] = useState<UserProfile | null>(null);
@@ -188,6 +209,17 @@ export const App: React.FC = () => {
     if (trackId === LEVEL_1.id || trackId === 'trial-level-1') {
       nextLevel = LEVEL_1;
       nextPalette = generateDailyPalette('trial01');
+    } else if (trackId.startsWith('custom:')) {
+      const decoded = decodeCustomTrack(trackId.slice(7));
+      setCustomTrackName(decoded.name);
+      setCustomTrackTheme(decoded.theme);
+      setCustomPieces(decoded.pieces);
+      const built = buildCustomLevel(decoded.pieces, {
+        name: decoded.name,
+        theme: decoded.theme,
+      });
+      nextLevel = built.level;
+      nextPalette = built.palette;
     } else {
       const data = await fetchLevel(trackId);
       if (data) {
@@ -237,7 +269,32 @@ export const App: React.FC = () => {
     });
 
     const requestedSeed = urlParams?.get('seed');
-    const requestedTrack = urlParams?.get('track') || urlParams?.get('level') || (requestedSeed ? `seed-${requestedSeed}` : null);
+    const customParam =
+      urlParams?.get('custom') ||
+      (urlParams?.get('track')?.startsWith('custom:')
+        ? urlParams.get('track')!.slice(7)
+        : null);
+    const requestedTrack =
+      urlParams?.get('track') ||
+      urlParams?.get('level') ||
+      (requestedSeed ? `seed-${requestedSeed}` : null);
+
+    if (customParam) {
+      const decoded = decodeCustomTrack(customParam);
+      setCustomTrackName(decoded.name);
+      setCustomTrackTheme(decoded.theme);
+      setCustomPieces(decoded.pieces);
+      const customBuilt = buildCustomLevel(decoded.pieces, {
+        name: decoded.name,
+        theme: decoded.theme,
+      });
+      setLevel(customBuilt.level);
+      setPalette(customBuilt.palette);
+    }
+
+    if (urlParams?.get('editor') === '1' || urlParams?.get('editor') === 'true') {
+      setIsEditorOpen(true);
+    }
 
     setArchiveLoading(true);
     Promise.all([fetchDailyLevel(), fetchArchive()]).then(([dailyData, archiveData]) => {
@@ -251,11 +308,13 @@ export const App: React.FC = () => {
           date: dailyData.date,
         });
 
-        if (requestedTrack) {
-          handleSelectTrack(requestedTrack);
-        } else {
-          setLevel(dailyData.level);
-          setPalette(dailyData.palette);
+        if (!customParam) {
+          if (requestedTrack) {
+            handleSelectTrack(requestedTrack);
+          } else {
+            setLevel(dailyData.level);
+            setPalette(dailyData.palette);
+          }
         }
       }
       setArchiveLoading(false);
@@ -317,6 +376,30 @@ export const App: React.FC = () => {
     window.addEventListener('keydown', handleKeyDown);
     return () => window.removeEventListener('keydown', handleKeyDown);
   }, [handleRestart]);
+
+  const handleStartTestDrive = useCallback(() => {
+    setLevel(customCompiled.level);
+    setPalette(customCompiled.palette);
+    setIsTestDrive(true);
+    setTimeout(() => {
+      handleRestart();
+    }, 15);
+  }, [customCompiled, handleRestart]);
+
+  const handleBackToEditor = useCallback(() => {
+    setIsTestDrive(false);
+  }, []);
+
+  // Keyboard shortcut 'Escape' to exit test drive back to editor
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === 'Escape' && isTestDrive) {
+        setIsTestDrive(false);
+      }
+    };
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, [isTestDrive]);
 
   // High-performance fixed-timestep game loop
   useEffect(() => {
@@ -546,53 +629,78 @@ export const App: React.FC = () => {
 
   const userRank = leaderboard.find((e) => e.displayName === userProfile?.displayName)?.rank;
 
+  const currentLevel = isEditorOpen ? customCompiled.level : level;
+  const currentPalette = isEditorOpen ? customCompiled.palette : palette;
+  const isEditingOnly = isEditorOpen && !isTestDrive;
+
   return (
     <div className="relative w-full h-full select-none overflow-hidden">
       {/* 3D Scene View */}
       <CanvasView
-        level={level}
-        palette={palette}
+        level={currentLevel}
+        palette={currentPalette}
         liveRenderRef={liveRenderRef}
         tilt={rawTilt}
+        mode={isEditingOnly ? 'editor' : 'race'}
       />
 
-      {/* Head-Up Display */}
-      <HUD
-        status={simState.status}
-        tick={simState.tick}
-        stateHash={simState.hash}
-        speed={speedMagnitude}
-        personalBest={personalBest}
-        showGhost={showGhost}
-        onToggleGhost={() => setShowGhost((v) => !v)}
-        onRestart={handleRestart}
-        isNewPB={isNewPB}
-        userDisplayName={userProfile?.displayName}
-        userAvatarUrl={userProfile?.avatarUrl}
-        isGoogleLinked={userProfile?.isGoogleLinked}
-        onOpenLeaderboard={() => {
-          refreshLeaderboard();
-          setIsLeaderboardOpen(true);
-        }}
-        onOpenProfile={() => setIsProfileOpen(true)}
-        submitStatus={submitStatus}
-        submitMessage={submitMessage}
-        activeGhostName={activeGhostName}
-        levelName={level.name}
-        levelId={level.id}
-        dateStr={level.id.startsWith('daily-') ? level.id.replace('daily-', '') : dailyInfo?.date}
-        onOpenTrackSelector={() => setIsTrackSelectorOpen(true)}
-        leaderboardRank={userRank}
-        lang={lang}
-        gyroSupported={gyroSupported}
-        gyroActive={gyroActive}
-        onToggleGyro={handleToggleGyro}
-        onCalibrateGyro={calibrateGyro}
-        isCalibrated={isCalibrated}
-        isMuted={isMuted}
-        onToggleMute={handleToggleMute}
-      />
-
+      {/* Editor Overlay UI (when in editor mode without test drive) */}
+      {isEditingOnly ? (
+        <TrackEditorUI
+          pieces={customPieces}
+          trackName={customTrackName}
+          theme={customTrackTheme}
+          onPiecesChange={setCustomPieces}
+          onTrackNameChange={setCustomTrackName}
+          onThemeChange={setCustomTrackTheme}
+          onTestDrive={handleStartTestDrive}
+          onExit={() => setIsEditorOpen(false)}
+          lang={lang}
+        />
+      ) : (
+        /* Head-Up Display (standard race or active test drive) */
+        <HUD
+          status={simState.status}
+          tick={simState.tick}
+          stateHash={simState.hash}
+          speed={speedMagnitude}
+          personalBest={personalBest}
+          showGhost={showGhost}
+          onToggleGhost={() => setShowGhost((v) => !v)}
+          onRestart={handleRestart}
+          isNewPB={isNewPB}
+          userDisplayName={userProfile?.displayName}
+          userAvatarUrl={userProfile?.avatarUrl}
+          isGoogleLinked={userProfile?.isGoogleLinked}
+          onOpenLeaderboard={() => {
+            refreshLeaderboard();
+            setIsLeaderboardOpen(true);
+          }}
+          onOpenProfile={() => setIsProfileOpen(true)}
+          submitStatus={submitStatus}
+          submitMessage={submitMessage}
+          activeGhostName={activeGhostName}
+          levelName={currentLevel.name}
+          levelId={currentLevel.id}
+          dateStr={currentLevel.id.startsWith('daily-') ? currentLevel.id.replace('daily-', '') : dailyInfo?.date}
+          onOpenTrackSelector={() => setIsTrackSelectorOpen(true)}
+          leaderboardRank={userRank}
+          lang={lang}
+          gyroSupported={gyroSupported}
+          gyroActive={gyroActive}
+          onToggleGyro={handleToggleGyro}
+          onCalibrateGyro={calibrateGyro}
+          isCalibrated={isCalibrated}
+          isMuted={isMuted}
+          onToggleMute={handleToggleMute}
+          onOpenEditor={() => {
+            setIsEditorOpen(true);
+            setIsTestDrive(false);
+          }}
+          isTestDrive={isTestDrive}
+          onBackToEditor={handleBackToEditor}
+        />
+      )}
 
       {/* Leaderboard Modal */}
       <LeaderboardModal
@@ -621,6 +729,10 @@ export const App: React.FC = () => {
         archive={archive}
         loading={archiveLoading}
         onSelectLevel={handleSelectTrack}
+        onOpenEditor={() => {
+          setIsEditorOpen(true);
+          setIsTestDrive(false);
+        }}
         lang={lang}
       />
 
@@ -634,24 +746,26 @@ export const App: React.FC = () => {
         onLanguageChange={handleLanguageChange}
       />
 
-      {/* Touch Joystick on Mobile (only if Gyro is not active) */}
-      {!gyroActive && <VirtualJoystick onTiltChange={setVirtualTilt} />}
+      {/* Touch Joystick on Mobile (during race or test drive) */}
+      {!isEditingOnly && !gyroActive && <VirtualJoystick onTiltChange={setVirtualTilt} />}
 
-      {/* Floating Jump Button for Mobile */}
-      <button
-        onPointerDown={(e) => {
-          e.preventDefault();
-          triggerJump();
-        }}
-        onClick={triggerJump}
-        className="md:hidden absolute bottom-6 right-6 z-20 w-18 h-18 rounded-3xl glass-panel-elevated flex flex-col items-center justify-center pointer-events-auto active:scale-90 transition-transform bg-gradient-to-br from-cyan-500/25 to-indigo-600/30 border border-cyan-400/50 text-cyan-200 shadow-2xl shadow-cyan-500/20 select-none touch-none ring-2 ring-cyan-400/20 cursor-pointer"
-        aria-label="Jump"
-      >
-        <span className="text-xl leading-none font-black drop-shadow-[0_0_6px_rgba(56,189,248,0.7)]">▲</span>
-        <span className="text-[10px] font-black uppercase tracking-widest mt-1">
-          {lang === 'fr' ? 'SAUT' : 'JUMP'}
-        </span>
-      </button>
+      {/* Floating Jump Button for Mobile (during race or test drive) */}
+      {!isEditingOnly && (
+        <button
+          onPointerDown={(e) => {
+            e.preventDefault();
+            triggerJump();
+          }}
+          onClick={triggerJump}
+          className="md:hidden absolute bottom-6 right-6 z-20 w-18 h-18 rounded-3xl glass-panel-elevated flex flex-col items-center justify-center pointer-events-auto active:scale-90 transition-transform bg-gradient-to-br from-cyan-500/25 to-indigo-600/30 border border-cyan-400/50 text-cyan-200 shadow-2xl shadow-cyan-500/20 select-none touch-none ring-2 ring-cyan-400/20 cursor-pointer"
+          aria-label="Jump"
+        >
+          <span className="text-xl leading-none font-black drop-shadow-[0_0_6px_rgba(56,189,248,0.7)]">▲</span>
+          <span className="text-[10px] font-black uppercase tracking-widest mt-1">
+            {lang === 'fr' ? 'SAUT' : 'JUMP'}
+          </span>
+        </button>
+      )}
     </div>
   );
 };

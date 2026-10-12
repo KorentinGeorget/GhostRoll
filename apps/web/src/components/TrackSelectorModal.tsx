@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Calendar, Check, Compass, Dices, Flame, Sparkles, Swords, Share2, X } from 'lucide-react';
+import { Calendar, Check, Compass, Dices, Flame, Sparkles, Swords, Share2, X, PenTool } from 'lucide-react';
 import { ArchiveItem } from '../api/client.js';
 import { Language, TRANSLATIONS } from '../i18n/translations.js';
 
@@ -13,6 +13,7 @@ interface TrackSelectorModalProps {
   archive: ArchiveItem[];
   loading: boolean;
   onSelectLevel: (levelId: string) => void;
+  onOpenEditor?: () => void;
   lang?: Language;
 }
 
@@ -28,6 +29,7 @@ export const TrackSelectorModal: React.FC<TrackSelectorModalProps> = ({
   archive,
   loading,
   onSelectLevel,
+  onOpenEditor,
   lang = 'en',
 }) => {
   const t = TRANSLATIONS[lang];
@@ -94,8 +96,37 @@ export const TrackSelectorModal: React.FC<TrackSelectorModalProps> = ({
 
         {/* Scrollable list */}
         <div className="overflow-y-auto my-4 space-y-4 pr-1 custom-scrollbar">
-          {/* Quick Actions: Random Level & Friend Challenge */}
+          {/* Quick Actions: Track Studio, Random Level & Friend Challenge */}
           <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+            {/* 3D Track Studio Card */}
+            {onOpenEditor && (
+              <button
+                onClick={() => {
+                  onClose();
+                  onOpenEditor();
+                }}
+                className="md:col-span-2 p-4 rounded-xl bg-gradient-to-r from-cyan-950/40 via-indigo-950/30 to-purple-950/40 hover:from-cyan-900/50 hover:to-purple-900/50 border border-cyan-400/30 hover:border-cyan-400/60 transition text-left flex items-center justify-between group cursor-pointer active:scale-[0.99] shadow-lg shadow-cyan-950/20"
+              >
+                <div className="flex items-center space-x-3.5">
+                  <div className="w-10 h-10 rounded-lg bg-cyan-500/20 text-cyan-300 border border-cyan-400/40 flex items-center justify-center group-hover:scale-105 transition-transform shadow-md shadow-cyan-500/20">
+                    <PenTool className="w-5 h-5" />
+                  </div>
+                  <div>
+                    <h3 className="font-bold text-white text-sm tracking-tight flex items-center space-x-2">
+                      <span>{t.trackEditor}</span>
+                      <span className="text-[9px] px-1.5 py-0.5 rounded bg-cyan-500/20 text-cyan-300 border border-cyan-400/30 font-mono font-bold uppercase">
+                        3D Studio
+                      </span>
+                    </h3>
+                    <p className="text-xs text-zinc-400 font-normal">{t.trackEditorDesc}</p>
+                  </div>
+                </div>
+                <span className="text-xs font-bold text-cyan-300 group-hover:translate-x-1 transition-transform">
+                  →
+                </span>
+              </button>
+            )}
+
             {/* Random Track Roll */}
             <button
               onClick={handleRollRandom}
