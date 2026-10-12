@@ -574,6 +574,21 @@ export async function buildApp(opts: AppOptions = {}): Promise<FastifyInstance> 
   }>('/api/levels/:levelId/leaderboard', async (request, reply) => {
     const { levelId } = request.params;
 
+    // Check if level is a community track to locate author
+    let authorId: string | null = null;
+    let authorName: string | null = null;
+    if (levelId.startsWith('ct_')) {
+      const trackRow = await db
+        .select({ authorId: customTracks.authorId, authorName: customTracks.authorName })
+        .from(customTracks)
+        .where(eq(customTracks.id, levelId))
+        .limit(1);
+      if (trackRow.length > 0) {
+        authorId = trackRow[0].authorId;
+        authorName = trackRow[0].authorName;
+      }
+    }
+
     // Get verified runs joined with users, selecting best time per user
     const rows = await db
       .select({
@@ -602,24 +617,50 @@ export async function buildApp(opts: AppOptions = {}): Promise<FastifyInstance> 
       }
     }
 
-    // Assign rank and attach ghost samples for top 5
+    // Find author ghost if this is a community track
+    let authorGhost: {
+      userId: string;
+      displayName: string;
+      ticks: number;
+      timeSeconds: number;
+      ghostSamples: any[];
+    } | undefined;
+
+    if (authorId) {
+      const authorRun = bestPerUser.find((r) => r.userId === authorId) || rows.find((r) => r.userId === authorId);
+      if (authorRun && authorRun.ghostSamples) {
+        authorGhost = {
+          userId: authorRun.userId,
+          displayName: authorRun.displayName || authorName || 'Auteur',
+          ticks: authorRun.verifiedTicks!,
+          timeSeconds: authorRun.verifiedTicks! / TICKS_PER_SECOND,
+          ghostSamples: JSON.parse(authorRun.ghostSamples),
+        };
+      }
+    }
+
+    // Assign rank and attach ghost samples for top 5 or author
     const leaderboard = bestPerUser.slice(0, 20).map((r, index) => {
       const isTop5 = index < 5;
+      const isAuthor = authorId ? r.userId === authorId : false;
       return {
         rank: index + 1,
         runId: r.runId,
+        userId: r.userId,
         displayName: r.displayName,
         ticks: r.verifiedTicks,
         timeSeconds: (r.verifiedTicks! / TICKS_PER_SECOND),
         finalHash: r.finalHash,
         date: r.createdAt,
-        ghostSamples: isTop5 && r.ghostSamples ? JSON.parse(r.ghostSamples) : undefined,
+        isAuthor,
+        ghostSamples: (isTop5 || isAuthor) && r.ghostSamples ? JSON.parse(r.ghostSamples) : undefined,
       };
     });
 
     return {
       levelId,
       totalEntries: leaderboard.length,
+      authorGhost,
       leaderboard,
     };
   });
@@ -737,9 +778,17 @@ export async function buildApp(opts: AppOptions = {}): Promise<FastifyInstance> 
     });
   });
 
-  // Get Community Custom Tracks
-  app.get('/api/custom-tracks', async () => {
-    const list = await db
+  // Get Community Custom Tracks (supports filtering by authorId, sorting, and search)
+  app.get<{
+    Querystring: {
+      authorId?: string;
+      sort?: 'recent' | 'popular' | 'fastest';
+      search?: string;
+    };
+  }>('/api/custom-tracks', async (request) => {
+    const { authorId, sort, search } = request.query || {};
+
+    let query = db
       .select({
         id: customTracks.id,
         name: customTracks.name,
@@ -752,16 +801,71 @@ export async function buildApp(opts: AppOptions = {}): Promise<FastifyInstance> 
         playCount: customTracks.playCount,
         createdAt: customTracks.createdAt,
       })
-      .from(customTracks)
-      .orderBy(desc(customTracks.createdAt))
-      .limit(50);
+      .from(customTracks);
+
+    const conditions = [];
+    if (authorId) {
+      conditions.push(eq(customTracks.authorId, authorId));
+    }
+
+    if (conditions.length > 0) {
+      query = query.where(and(...conditions)) as any;
+    }
+
+    if (sort === 'popular') {
+      query = query.orderBy(desc(customTracks.playCount), desc(customTracks.createdAt)) as any;
+    } else if (sort === 'fastest') {
+      query = query.orderBy(asc(customTracks.clearTicks)) as any;
+    } else {
+      query = query.orderBy(desc(customTracks.createdAt)) as any;
+    }
+
+    const list = await query.limit(50);
+
+    const filtered = search
+      ? list.filter(
+          (t) =>
+            t.name.toLowerCase().includes(search.toLowerCase()) ||
+            t.authorName.toLowerCase().includes(search.toLowerCase())
+        )
+      : list;
 
     return {
-      tracks: list.map((t) => ({
+      tracks: filtered.map((t) => ({
         ...t,
         clearTimeSeconds: t.clearTicks / TICKS_PER_SECOND,
       })),
     };
+  });
+
+  // Delete / Unpublish custom track (author only)
+  app.delete<{
+    Params: { trackId: string };
+  }>('/api/custom-tracks/:trackId', async (request, reply) => {
+    const rawCookie = request.cookies['gr_token'];
+    const { user } = await getOrCreateGuestUser(db, rawCookie);
+    const { trackId } = request.params;
+
+    const existing = await db
+      .select()
+      .from(customTracks)
+      .where(eq(customTracks.id, trackId))
+      .limit(1);
+
+    if (existing.length === 0) {
+      return reply.status(404).send({ error: 'TRACK_NOT_FOUND', message: 'Track not found' });
+    }
+
+    if (existing[0].authorId !== user.id) {
+      return reply.status(403).send({ error: 'FORBIDDEN', message: 'Only author can delete this track' });
+    }
+
+    // Delete runs associated with this track
+    await db.delete(runs).where(eq(runs.levelId, trackId));
+    // Delete track
+    await db.delete(customTracks).where(eq(customTracks.id, trackId));
+
+    return reply.status(200).send({ success: true, deletedTrackId: trackId });
   });
 
   return app;

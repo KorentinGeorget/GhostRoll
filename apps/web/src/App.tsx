@@ -50,6 +50,7 @@ import {
   publishCustomTrack,
   UserProfile,
   LeaderboardEntry,
+  AuthorGhost,
   ArchiveItem,
 } from './api/client.js';
 
@@ -125,8 +126,9 @@ export const App: React.FC = () => {
   const [leaderboard, setLeaderboard] = useState<LeaderboardEntry[]>([]);
   const [leaderboardLoading, setLeaderboardLoading] = useState(false);
   const [isLeaderboardOpen, setIsLeaderboardOpen] = useState(false);
-  const [activeGhostSource, setActiveGhostSource] = useState<'pb' | 'leaderboard'>('pb');
+  const [activeGhostSource, setActiveGhostSource] = useState<'pb' | 'leaderboard' | 'author'>('pb');
   const [selectedLeaderboardGhost, setSelectedLeaderboardGhost] = useState<LeaderboardEntry | null>(null);
+  const [authorGhost, setAuthorGhost] = useState<AuthorGhost | null>(null);
 
   // Run submission status
   const [submitStatus, setSubmitStatus] = useState<'idle' | 'submitting' | 'verified' | 'rejected'>('idle');
@@ -266,12 +268,14 @@ export const App: React.FC = () => {
     const data = await fetchLeaderboard(level.id);
     if (data) {
       setLeaderboard(data.leaderboard);
-      // Auto-target world record ghost if player has no local PB
-      if (data.leaderboard.length > 0 && data.leaderboard[0].ghostSamples) {
-        if (!getStoredPB(level.id)) {
-          setSelectedLeaderboardGhost(data.leaderboard[0]);
-          setActiveGhostSource('leaderboard');
-        }
+      setAuthorGhost(data.authorGhost || null);
+      const pb = getStoredPB(level.id);
+      // Auto-target author ghost for community tracks if player has no local PB
+      if (level.id.startsWith('ct_') && data.authorGhost && !pb) {
+        setActiveGhostSource('author');
+      } else if (data.leaderboard.length > 0 && data.leaderboard[0].ghostSamples && !pb) {
+        setSelectedLeaderboardGhost(data.leaderboard[0]);
+        setActiveGhostSource('leaderboard');
       }
     }
     setLeaderboardLoading(false);
@@ -676,10 +680,14 @@ export const App: React.FC = () => {
       // Sub-tick continuous ghost interpolation
       if (showGhost) {
         let activeSamples: GhostSample[] | null = null;
-        if (activeGhostSource === 'leaderboard' && selectedLeaderboardGhost?.ghostSamples?.length) {
+        if (activeGhostSource === 'author' && authorGhost?.ghostSamples?.length) {
+          activeSamples = authorGhost.ghostSamples;
+        } else if (activeGhostSource === 'leaderboard' && selectedLeaderboardGhost?.ghostSamples?.length) {
           activeSamples = selectedLeaderboardGhost.ghostSamples;
         } else if (personalBest?.samples?.length) {
           activeSamples = personalBest.samples;
+        } else if (authorGhost?.ghostSamples?.length) {
+          activeSamples = authorGhost.ghostSamples;
         } else if (selectedLeaderboardGhost?.ghostSamples?.length) {
           activeSamples = selectedLeaderboardGhost.ghostSamples;
         }
@@ -745,9 +753,15 @@ export const App: React.FC = () => {
   );
 
   const activeGhostName =
-    activeGhostSource === 'leaderboard' && selectedLeaderboardGhost
+    activeGhostSource === 'author' && authorGhost
+      ? `${lang === 'fr' ? 'Créateur' : 'Creator'} (${authorGhost.displayName})`
+      : activeGhostSource === 'leaderboard' && selectedLeaderboardGhost
       ? `#${selectedLeaderboardGhost.rank} ${selectedLeaderboardGhost.displayName}`
-      : 'Personal Best';
+      : personalBest
+      ? (lang === 'fr' ? 'Mon Record (PB)' : 'Personal Best')
+      : authorGhost
+      ? `${lang === 'fr' ? 'Créateur' : 'Creator'} (${authorGhost.displayName})`
+      : undefined;
 
   const userRank = leaderboard.find((e) => e.displayName === userProfile?.displayName)?.rank;
 
@@ -842,7 +856,16 @@ export const App: React.FC = () => {
         onClose={() => setIsLeaderboardOpen(false)}
         entries={leaderboard}
         loading={leaderboardLoading}
-        selectedGhostRunId={selectedLeaderboardGhost?.runId}
+        selectedGhostRunId={
+          activeGhostSource === 'author' ? undefined : selectedLeaderboardGhost?.runId
+        }
+        authorGhost={authorGhost}
+        onSelectAuthorGhost={(ag) => {
+          setActiveGhostSource('author');
+          setSelectedLeaderboardGhost(null);
+          setIsLeaderboardOpen(false);
+          handleRestart();
+        }}
         lang={lang}
         onSelectGhost={(entry) => {
           setSelectedLeaderboardGhost(entry);
@@ -867,6 +890,7 @@ export const App: React.FC = () => {
           setIsEditorOpen(true);
           setIsTestDrive(false);
         }}
+        userProfile={userProfile}
         lang={lang}
       />
 

@@ -93,7 +93,7 @@ export const HUD: React.FC<HUDProps> = ({
   onOpenProfile,
   submitStatus = 'idle',
   submitMessage,
-  activeGhostName: _activeGhostName,
+  activeGhostName,
   levelName,
   levelId: _levelId,
   dateStr,
@@ -321,6 +321,16 @@ export const HUD: React.FC<HUDProps> = ({
                 )}
               </button>
             </div>
+
+            {activeGhostName && showGhost && (
+              <>
+                <span className="text-zinc-600">•</span>
+                <span className="flex items-center space-x-1 text-cyan-300 font-sans text-[11px] font-medium" title={activeGhostName}>
+                  <span className="w-1.5 h-1.5 rounded-full bg-cyan-400 animate-pulse shrink-0" />
+                  <span className="truncate max-w-[120px]">{activeGhostName}</span>
+                </span>
+              </>
+            )}
           </div>
         </div>
       </div>

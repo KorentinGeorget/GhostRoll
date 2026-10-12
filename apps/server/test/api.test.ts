@@ -355,5 +355,42 @@ describe('Server API & Replay Verification Pipeline', () => {
 
     expect(unknownRes.statusCode).toBe(422);
     expect(unknownRes.json().reason).toContain('UNKNOWN_LEVEL');
+
+    // Verify community track leaderboard returns authorGhost
+    const lbRes = await app.inject({
+      method: 'GET',
+      url: `/api/levels/${pubBody.track.id}/leaderboard`,
+    });
+    expect(lbRes.statusCode).toBe(200);
+    const lbBody = lbRes.json();
+    expect(lbBody.authorGhost).toBeDefined();
+    expect(lbBody.authorGhost.ticks).toBe(claimedTicks);
+    expect(lbBody.authorGhost.ghostSamples.length).toBeGreaterThan(0);
+    expect(lbBody.leaderboard[0].isAuthor).toBe(true);
+
+    // Verify search filter in GET /api/custom-tracks
+    const searchRes = await app.inject({
+      method: 'GET',
+      url: '/api/custom-tracks?search=Speedy',
+    });
+    expect(searchRes.statusCode).toBe(200);
+    expect(searchRes.json().tracks.some((t: any) => t.id === pubBody.track.id)).toBe(true);
+
+    // Verify author can delete custom track
+    const cookieHeader = pubRes.headers['set-cookie'] as string;
+    const delRes = await app.inject({
+      method: 'DELETE',
+      url: `/api/custom-tracks/${pubBody.track.id}`,
+      headers: cookieHeader ? { cookie: cookieHeader } : {},
+    });
+    expect(delRes.statusCode).toBe(200);
+    expect(delRes.json().success).toBe(true);
+
+    // Verify track is deleted from catalog
+    const afterDelRes = await app.inject({
+      method: 'GET',
+      url: '/api/custom-tracks',
+    });
+    expect(afterDelRes.json().tracks.some((t: any) => t.id === pubBody.track.id)).toBe(false);
   });
 });

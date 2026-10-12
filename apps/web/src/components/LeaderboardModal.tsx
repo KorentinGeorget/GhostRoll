@@ -1,6 +1,6 @@
 import React from 'react';
-import { LeaderboardEntry } from '../api/client.js';
-import { Trophy, X, Play, CheckCircle2, Award, Flame } from 'lucide-react';
+import { LeaderboardEntry, AuthorGhost } from '../api/client.js';
+import { Trophy, X, Play, CheckCircle2, Award, Flame, Star } from 'lucide-react';
 import { TICKS_PER_SECOND } from '@ghostroll/shared';
 import { Language } from '../i18n/translations.js';
 
@@ -10,7 +10,9 @@ interface LeaderboardModalProps {
   entries: LeaderboardEntry[];
   loading: boolean;
   selectedGhostRunId?: string;
+  authorGhost?: AuthorGhost | null;
   onSelectGhost: (entry: LeaderboardEntry) => void;
+  onSelectAuthorGhost?: (authorGhost: AuthorGhost) => void;
   lang?: Language;
 }
 
@@ -28,7 +30,9 @@ export const LeaderboardModal: React.FC<LeaderboardModalProps> = ({
   entries,
   loading,
   selectedGhostRunId,
+  authorGhost,
   onSelectGhost,
+  onSelectAuthorGhost,
   lang = 'en',
 }) => {
   if (!isOpen) return null;
@@ -64,6 +68,36 @@ export const LeaderboardModal: React.FC<LeaderboardModalProps> = ({
 
         {/* Content */}
         <div className="flex-1 overflow-y-auto space-y-2 pr-1 custom-scrollbar">
+          {/* Creator Reference Record Banner */}
+          {authorGhost && (
+            <div className="p-3 mb-3 rounded-xl bg-gradient-to-r from-cyan-950/40 via-indigo-950/30 to-purple-950/40 border border-cyan-400/30 flex items-center justify-between shadow-lg">
+              <div className="flex items-center space-x-2.5 min-w-0 pr-2">
+                <div className="w-8 h-8 rounded-lg bg-cyan-500/20 text-cyan-300 border border-cyan-400/30 flex items-center justify-center shrink-0">
+                  <Star className="w-4 h-4 fill-current" />
+                </div>
+                <div className="min-w-0">
+                  <div className="text-xs font-bold text-white flex items-center space-x-1.5 truncate">
+                    <span>{fr ? 'Temps du créateur' : 'Creator Record'}</span>
+                    <span className="text-zinc-400 font-normal truncate">• {authorGhost.displayName}</span>
+                  </div>
+                  <div className="font-mono text-cyan-300 font-semibold text-xs mt-0.5">
+                    ⏱ {authorGhost.timeSeconds.toFixed(3)}s
+                  </div>
+                </div>
+              </div>
+              {onSelectAuthorGhost && (
+                <button
+                  type="button"
+                  onClick={() => onSelectAuthorGhost(authorGhost)}
+                  className="px-3 py-1.5 rounded-lg bg-cyan-500 hover:bg-cyan-400 text-zinc-950 font-bold text-xs flex items-center space-x-1.5 transition active:scale-95 cursor-pointer shrink-0 shadow-md shadow-cyan-950/40"
+                >
+                  <Play className="w-3 h-3 fill-current" />
+                  <span>{fr ? 'Défier' : 'Race'}</span>
+                </button>
+              )}
+            </div>
+          )}
+
           {loading ? (
             <div className="py-16 flex flex-col items-center justify-center space-y-3">
               <div className="w-8 h-8 rounded-full border-2 border-zinc-400 border-t-white animate-spin" />
@@ -113,8 +147,14 @@ export const LeaderboardModal: React.FC<LeaderboardModalProps> = ({
                     </div>
 
                     <div>
-                      <div className="text-sm font-semibold text-zinc-100 flex items-center space-x-1.5">
-                        <span className="truncate max-w-[130px] md:max-w-[160px]">{entry.displayName}</span>
+                      <div className="text-sm font-semibold text-zinc-100 flex items-center space-x-1.5 flex-wrap">
+                        <span className="truncate max-w-[120px] md:max-w-[150px]">{entry.displayName}</span>
+                        {entry.isAuthor && (
+                          <span className="text-[9px] font-bold uppercase px-1.5 py-0.2 rounded bg-cyan-500/20 text-cyan-300 border border-cyan-400/30 flex items-center space-x-0.5 shrink-0">
+                            <Star className="w-2.5 h-2.5 fill-current" />
+                            <span>{fr ? 'Créateur' : 'Creator'}</span>
+                          </span>
+                        )}
                         {isFirst && <Flame className="w-3.5 h-3.5 text-amber-400 inline-block shrink-0" />}
                         <span title="Verified by server" className="shrink-0">
                           <CheckCircle2 className="w-3.5 h-3.5 text-emerald-400" />

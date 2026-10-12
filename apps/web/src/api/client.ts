@@ -22,17 +22,28 @@ export interface RunSubmitResponse {
 export interface LeaderboardEntry {
   rank: number;
   runId: string;
+  userId?: string;
   displayName: string;
   ticks: number;
   timeSeconds: number;
   finalHash: string;
   date: string;
+  isAuthor?: boolean;
   ghostSamples?: GhostSample[];
+}
+
+export interface AuthorGhost {
+  userId: string;
+  displayName: string;
+  ticks: number;
+  timeSeconds: number;
+  ghostSamples: GhostSample[];
 }
 
 export interface LeaderboardResponse {
   levelId: string;
   totalEntries: number;
+  authorGhost?: AuthorGhost;
   leaderboard: LeaderboardEntry[];
 }
 
@@ -226,15 +237,38 @@ export interface CommunityTrackItem {
   createdAt: string;
 }
 
-export async function fetchCommunityTracks(): Promise<CommunityTrackItem[]> {
+export async function fetchCommunityTracks(params?: {
+  authorId?: string;
+  sort?: 'recent' | 'popular' | 'fastest';
+  search?: string;
+}): Promise<CommunityTrackItem[]> {
   try {
-    const res = await fetch('/api/custom-tracks', { credentials: 'include' });
+    const searchParams = new URLSearchParams();
+    if (params?.authorId) searchParams.set('authorId', params.authorId);
+    if (params?.sort) searchParams.set('sort', params.sort);
+    if (params?.search) searchParams.set('search', params.search);
+
+    const query = searchParams.toString() ? `?${searchParams.toString()}` : '';
+    const res = await fetch(`/api/custom-tracks${query}`, { credentials: 'include' });
     if (!res.ok) return [];
     const data = await res.json();
     return data.tracks || [];
   } catch (err) {
     console.warn('Failed to fetch community tracks:', err);
     return [];
+  }
+}
+
+export async function deleteCustomTrack(trackId: string): Promise<boolean> {
+  try {
+    const res = await fetch(`/api/custom-tracks/${trackId}`, {
+      method: 'DELETE',
+      credentials: 'include',
+    });
+    return res.ok;
+  } catch (err) {
+    console.warn('Failed to delete custom track:', err);
+    return false;
   }
 }
 
