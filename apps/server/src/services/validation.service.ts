@@ -8,6 +8,8 @@ import {
   initPhysics,
   LEVEL_1,
   generateDailyLevel,
+  buildCustomLevel,
+  decodeCustomTrack,
 } from '@ghostroll/sim';
 
 export interface ValidationRequest {
@@ -16,6 +18,7 @@ export interface ValidationRequest {
   claimedTicks: number;
   finalHash: string;
   inputs: InputFrame[];
+  level?: LevelDefinition;
 }
 
 export interface ValidationResult {
@@ -38,30 +41,43 @@ export async function validateReplay(req: ValidationRequest): Promise<Validation
   }
 
   // Resolve level
-  let level: LevelDefinition | null = null;
-  if (
-    req.levelId === LEVEL_1.id ||
-    req.levelId === 'trial-level-1' ||
-    req.levelId === 'daily-2026-10-09-seed01'
-  ) {
-    level = LEVEL_1;
-  } else if (
-    req.levelId.startsWith('daily-') ||
-    req.levelId.startsWith('seed-') ||
-    req.levelId.startsWith('custom-') ||
-    req.levelId.startsWith('random-')
-  ) {
-    const seed = req.levelId.replace(/^(daily-|seed-|custom-|random-)/, '');
-    try {
-      level = generateDailyLevel(seed).level;
-    } catch {
-      level = null;
-    }
-  } else {
-    try {
-      level = generateDailyLevel(req.levelId).level;
-    } catch {
-      level = null;
+  let level: LevelDefinition | null = req.level || null;
+
+  if (!level) {
+    if (
+      req.levelId === LEVEL_1.id ||
+      req.levelId === 'trial-level-1' ||
+      req.levelId === 'daily-2026-10-09-seed01'
+    ) {
+      level = LEVEL_1;
+    } else if (req.levelId.startsWith('custom:')) {
+      try {
+        const decoded = decodeCustomTrack(req.levelId.slice(7));
+        level = buildCustomLevel(decoded.pieces, {
+          name: decoded.name,
+          theme: decoded.theme,
+        }).level;
+      } catch {
+        level = null;
+      }
+    } else if (
+      req.levelId.startsWith('daily-') ||
+      req.levelId.startsWith('seed-') ||
+      req.levelId.startsWith('custom-') ||
+      req.levelId.startsWith('random-')
+    ) {
+      const seed = req.levelId.replace(/^(daily-|seed-|custom-|random-)/, '');
+      try {
+        level = generateDailyLevel(seed).level;
+      } catch {
+        level = null;
+      }
+    } else {
+      try {
+        level = generateDailyLevel(req.levelId).level;
+      } catch {
+        level = null;
+      }
     }
   }
 

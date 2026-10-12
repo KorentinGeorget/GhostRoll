@@ -23,6 +23,12 @@ import {
   PenTool,
 } from 'lucide-react';
 
+export interface SplitBadgeData {
+  sector: number;
+  deltaSec?: number;
+  currentSec: number;
+}
+
 interface HUDProps {
   status: SimStatus;
   tick: number;
@@ -57,6 +63,7 @@ interface HUDProps {
   onOpenEditor?: () => void;
   isTestDrive?: boolean;
   onBackToEditor?: () => void;
+  splitBadge?: SplitBadgeData | null;
 }
 
 const cleanName = (n: string) => n.replace(/\s*\(Daily[^)]*\)\s*$/, '');
@@ -103,6 +110,7 @@ export const HUD: React.FC<HUDProps> = ({
   onOpenEditor,
   isTestDrive,
   onBackToEditor,
+  splitBadge,
 }) => {
   const t = TRANSLATIONS[lang];
   const [copiedShare, setCopiedShare] = useState(false);
@@ -316,6 +324,38 @@ export const HUD: React.FC<HUDProps> = ({
           </div>
         </div>
       </div>
+
+      {/* Sector Split Time Notification Badge (Trackmania style) */}
+      {splitBadge && (
+        <div
+          key={`split-${splitBadge.sector}-${splitBadge.currentSec}`}
+          className={`absolute left-1/2 -translate-x-1/2 top-44 lg:top-28 z-30 pointer-events-none flex flex-col items-center px-4 py-2 rounded-2xl backdrop-blur-md shadow-2xl border transition-all duration-300 animate-in zoom-in-90 fade-in ${
+            splitBadge.deltaSec !== undefined
+              ? splitBadge.deltaSec <= 0
+                ? 'bg-emerald-950/85 border-emerald-400/60 shadow-emerald-500/25 text-emerald-300'
+                : 'bg-rose-950/85 border-rose-400/60 shadow-rose-500/25 text-rose-300'
+              : 'bg-zinc-900/85 border-cyan-400/60 shadow-cyan-500/25 text-cyan-300'
+          }`}
+        >
+          <div className="text-[10px] uppercase font-mono font-bold tracking-widest opacity-90 mb-0.5">
+            {splitBadge.sector === 1
+              ? t.sector1
+              : splitBadge.sector === 2
+              ? t.sector2
+              : `${lang === 'fr' ? 'SECTEUR' : 'SECTOR'} ${splitBadge.sector}`}
+          </div>
+          <div className="font-mono text-2xl sm:text-3xl font-black tabular-nums tracking-tight flex items-center space-x-1">
+            {splitBadge.deltaSec !== undefined ? (
+              <>
+                <span>{splitBadge.deltaSec <= 0 ? '-' : '+'}</span>
+                <span>{Math.abs(splitBadge.deltaSec).toFixed(2)}s</span>
+              </>
+            ) : (
+              <span>{splitBadge.currentSec.toFixed(2)}s</span>
+            )}
+          </div>
+        </div>
+      )}
 
       {/* =========================================================================
           PRE-RUN PROMPT (Centered, Clean, Unobtrusive)

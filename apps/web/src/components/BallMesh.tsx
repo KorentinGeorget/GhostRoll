@@ -63,12 +63,14 @@ export const BallMesh: React.FC<BallMeshProps> = ({
     return null;
   }, []);
 
-  const TRAIL_LENGTH = 16;
+  const TRAIL_LENGTH = 28;
   const trailPositions = useRef<THREE.Vector3[]>(
-    Array.from({ length: 16 }, () => new THREE.Vector3(position[0], position[1], position[2]))
+    Array.from({ length: 28 }, () => new THREE.Vector3(position[0], position[1], position[2]))
   );
   const lineGeometryRef = useRef<THREE.BufferGeometry>(null);
   const lineMatRef = useRef<THREE.LineBasicMaterial>(null);
+  const NUM_COMET_PARTICLES = 6;
+  const particleMeshesRef = useRef<(THREE.Mesh | null)[]>([]);
 
   useFrame((_, delta) => {
     let px: number;
@@ -162,7 +164,27 @@ export const BallMesh: React.FC<BallMeshProps> = ({
     }
 
     if (lineMatRef.current) {
-      lineMatRef.current.opacity = horizontalSpeed > 2.5 ? Math.min(0.7, (horizontalSpeed - 2.5) * 0.07) : 0;
+      lineMatRef.current.opacity = horizontalSpeed > 2.0 ? Math.min(0.8, (horizontalSpeed - 2.0) * 0.08) : 0;
+    }
+
+    // Update comet wake particles
+    for (let i = 0; i < NUM_COMET_PARTICLES; i++) {
+      const pMesh = particleMeshesRef.current[i];
+      if (!pMesh) continue;
+      if (horizontalSpeed > 2.2) {
+        pMesh.visible = true;
+        const ptIndex = Math.min(pts.length - 1, (i + 1) * 4);
+        const pt = pts[ptIndex];
+        pMesh.position.set(pt.x, pt.y, pt.z);
+        const scale = (1.0 - i * 0.14) * Math.min(1.0, (horizontalSpeed - 2.0) * 0.14);
+        pMesh.scale.set(scale, scale, scale);
+        const pMat = pMesh.material as THREE.MeshBasicMaterial;
+        if (pMat) {
+          pMat.opacity = (1.0 - i * 0.15) * Math.min(0.65, (horizontalSpeed - 2.2) * 0.08);
+        }
+      } else {
+        pMesh.visible = false;
+      }
     }
   });
 
@@ -229,6 +251,26 @@ export const BallMesh: React.FC<BallMeshProps> = ({
           depthWrite={false}
         />
       </line>
+
+      {/* 5. Volumetric Speed Comet Particles */}
+      {Array.from({ length: NUM_COMET_PARTICLES }).map((_, i) => (
+        <mesh
+          key={i}
+          ref={(el) => {
+            particleMeshesRef.current[i] = el;
+          }}
+          visible={false}
+        >
+          <sphereGeometry args={[BALL_RADIUS * 0.45, 12, 12]} />
+          <meshBasicMaterial
+            color="#38bdf8"
+            transparent
+            opacity={0}
+            blending={THREE.AdditiveBlending}
+            depthWrite={false}
+          />
+        </mesh>
+      ))}
     </group>
   );
 };

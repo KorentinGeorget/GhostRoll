@@ -5,6 +5,7 @@ import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { buildApp } from '../src/app.js';
 import { createTestDb, DB } from '../src/db/index.js';
+import { buildCustomLevel, createSimulation } from '@ghostroll/sim';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -229,5 +230,96 @@ describe('Server API & Replay Verification Pipeline', () => {
     expect(body.archive).toBeInstanceOf(Array);
     expect(body.archive.length).toBe(7);
     expect(body.archive[0].levelId).toMatch(/^daily-[0-9]{4}-[0-9]{2}-[0-9]{2}$/);
+  });
+
+  it('POST /api/custom-tracks rejects publication if clear check replay is invalid with 422', async () => {
+    const res = await app.inject({
+      method: 'POST',
+      url: '/api/custom-tracks',
+      payload: {
+        name: 'Impossible Course',
+        theme: 'cyberpunk',
+        pieceCode: 'S',
+        replay: {
+          simVersion: 1,
+          claimedTicks: 10,
+          finalHash: 'bad_hash',
+          inputs: [{ tiltX: 0, tiltZ: 0 }],
+        },
+      },
+    });
+
+    expect(res.statusCode).toBe(422);
+    const body = res.json();
+    expect(body.error).toBe('CLEAR_CHECK_FAILED');
+  });
+
+  it('POST /api/custom-tracks publishes track with valid winning replay and lists in catalog', async () => {
+    // Generate valid winning replay for 1-straight custom track
+    const { level } = buildCustomLevel(['straight'], { name: 'Straightaway' });
+    const sim = createSimulation(level);
+    const inputs: Array<{ tiltX: number; tiltZ: number }> = [];
+    let won = false;
+    let finalHash = '';
+    let claimedTicks = 0;
+
+    for (let t = 0; t < 300; t++) {
+      const frame = { tiltX: 0, tiltZ: 127 };
+      inputs.push(frame);
+      const next = sim.step(frame);
+      if (next.status === 'won') {
+        won = true;
+        claimedTicks = next.tick;
+        finalHash = next.hash;
+        break;
+      }
+    }
+    sim.destroy();
+    expect(won).toBe(true);
+
+    // Publish track
+    const pubRes = await app.inject({
+      method: 'POST',
+      url: '/api/custom-tracks',
+      payload: {
+        name: 'Speedy Sprint',
+        theme: 'cyberpunk',
+        pieceCode: 'S',
+        replay: {
+          simVersion: 1,
+          claimedTicks,
+          finalHash,
+          inputs,
+        },
+      },
+    });
+
+    expect(pubRes.statusCode).toBe(201);
+    const pubBody = pubRes.json();
+    expect(pubBody.success).toBe(true);
+    expect(pubBody.track.id).toMatch(/^ct_[0-9a-f]{8}$/);
+    expect(pubBody.track.name).toBe('Speedy Sprint');
+
+    // Retrieve community catalog
+    const listRes = await app.inject({
+      method: 'GET',
+      url: '/api/custom-tracks',
+    });
+
+    expect(listRes.statusCode).toBe(200);
+    const listBody = listRes.json();
+    expect(listBody.tracks.length).toBeGreaterThanOrEqual(1);
+    expect(listBody.tracks.some((t: any) => t.id === pubBody.track.id)).toBe(true);
+
+    // Load track by ID via /api/levels/:levelId
+    const loadRes = await app.inject({
+      method: 'GET',
+      url: `/api/levels/${pubBody.track.id}`,
+    });
+
+    expect(loadRes.statusCode).toBe(200);
+    const loadBody = loadRes.json();
+    expect(loadBody.level.name).toBe('Speedy Sprint');
+    expect(loadBody.level.colliders.length).toBeGreaterThan(1);
   });
 });

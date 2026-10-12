@@ -18,18 +18,19 @@ import {
   Simulation,
   buildCustomLevel,
   decodeCustomTrack,
+  encodeTrackPieces,
   TRACK_PRESETS,
   TrackPieceType,
 } from '@ghostroll/sim';
 import { CanvasView } from './components/CanvasView.js';
-import { HUD } from './components/HUD.js';
+import { HUD, SplitBadgeData } from './components/HUD.js';
 import { TrackEditorUI } from './components/TrackEditorUI.js';
 import { VirtualJoystick } from './components/VirtualJoystick.js';
 import { LeaderboardModal } from './components/LeaderboardModal.js';
 import { TrackSelectorModal } from './components/TrackSelectorModal.js';
 import { ProfileModal } from './components/ProfileModal.js';
 import { useControls } from './hooks/useControls.js';
-import { Language, getInitialLanguage } from './i18n/translations.js';
+import { Language, TRANSLATIONS, getInitialLanguage } from './i18n/translations.js';
 import { soundFX } from './utils/audio.js';
 import { LiveRenderState } from './types/render.js';
 
@@ -46,6 +47,7 @@ import {
   fetchArchive,
   fetchLevel,
   submitRun,
+  publishCustomTrack,
   UserProfile,
   LeaderboardEntry,
   ArchiveItem,
@@ -94,6 +96,20 @@ export const App: React.FC = () => {
   );
   const [customTrackName, setCustomTrackName] = useState('Mon Grand Prix');
   const [customTrackTheme, setCustomTrackTheme] = useState('cyberpunk');
+  const [isCustomVerified, setIsCustomVerified] = useState(false);
+  const [clearCheckSeconds, setClearCheckSeconds] = useState<number | undefined>(undefined);
+  const [isPublishing, setIsPublishing] = useState(false);
+  const [publishedTrackId, setPublishedTrackId] = useState<string | null>(null);
+  const testDriveReplay = useRef<{
+    claimedTicks: number;
+    finalHash: string;
+    inputs: Array<{ tiltX: number; tiltZ: number; jump?: boolean }>;
+  } | null>(null);
+
+  // Sector split timing telemetry
+  const [splitBadge, setSplitBadge] = useState<SplitBadgeData | null>(null);
+  const lastCheckpointRef = useRef(0);
+  const splitBadgeTimerRef = useRef<any>(null);
 
   const customCompiled = React.useMemo(() => {
     return buildCustomLevel(customPieces, {
@@ -180,6 +196,9 @@ export const App: React.FC = () => {
     lastBoostRef.current = false;
     lastJumpPadRef.current = false;
     soundFX.updateRolling(0, false);
+    lastCheckpointRef.current = 0;
+    if (splitBadgeTimerRef.current) clearTimeout(splitBadgeTimerRef.current);
+    setSplitBadge(null);
     const initial = simRef.current.getState();
     liveRenderRef.current.prevPos = initial.ball.position;
     liveRenderRef.current.currPos = initial.ball.position;
@@ -390,6 +409,35 @@ export const App: React.FC = () => {
     setIsTestDrive(false);
   }, []);
 
+  const handlePublishTrack = useCallback(async () => {
+    if (!isCustomVerified || !testDriveReplay.current || isPublishing) return;
+    setIsPublishing(true);
+    try {
+      const pieceCode = encodeTrackPieces(customPieces);
+      const res = await publishCustomTrack({
+        name: customTrackName,
+        theme: customTrackTheme,
+        pieceCode,
+        replay: {
+          simVersion: 1,
+          claimedTicks: testDriveReplay.current.claimedTicks,
+          finalHash: testDriveReplay.current.finalHash,
+          inputs: testDriveReplay.current.inputs,
+        },
+      });
+      if (res.success && res.track) {
+        setPublishedTrackId(res.track.id);
+        alert(TRANSLATIONS[lang].publishedSuccess);
+      } else {
+        alert(res.error || 'Erreur lors de la publication du circuit');
+      }
+    } catch (err: any) {
+      alert(err?.message || 'Erreur de connexion');
+    } finally {
+      setIsPublishing(false);
+    }
+  }, [isCustomVerified, isPublishing, customPieces, customTrackName, customTrackTheme, lang]);
+
   // Keyboard shortcut 'Escape' to exit test drive back to editor
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
@@ -462,6 +510,60 @@ export const App: React.FC = () => {
           }
           lastJumpPadRef.current = !!newState.activeEffects?.jump;
 
+          // Sector split timing and audio feedback
+          if (newState.lastCheckpoint && newState.lastCheckpoint > lastCheckpointRef.current) {
+            const cpIndex = newState.lastCheckpoint;
+            lastCheckpointRef.current = cpIndex;
+
+            const currentSec = newState.tick * FIXED_DT;
+            let deltaSec: number | undefined = undefined;
+
+            let activeSamples: GhostSample[] | null = null;
+            if (activeGhostSource === 'leaderboard' && selectedLeaderboardGhost?.ghostSamples?.length) {
+              activeSamples = selectedLeaderboardGhost.ghostSamples;
+            } else if (personalBest?.samples?.length) {
+              activeSamples = personalBest.samples;
+            } else if (selectedLeaderboardGhost?.ghostSamples?.length) {
+              activeSamples = selectedLeaderboardGhost.ghostSamples;
+            }
+
+            const currentActiveLevel = isEditorOpen ? customCompiled.level : level;
+            const cpDef = currentActiveLevel.checkpoints?.find((c) => c.index === cpIndex);
+            if (activeSamples && activeSamples.length > 0 && cpDef) {
+              let minDistSq = Infinity;
+              let ghostTickAtCp: number | null = null;
+              for (const sample of activeSamples) {
+                const [gTick, gx, gy, gz] = sample;
+                const dx = gx - cpDef.position[0];
+                const dy = gy - cpDef.position[1];
+                const dz = gz - cpDef.position[2];
+                const distSq = dx * dx + dz * dz;
+                if (distSq < minDistSq) {
+                  minDistSq = distSq;
+                  ghostTickAtCp = gTick;
+                }
+              }
+
+              if (ghostTickAtCp !== null && minDistSq <= (cpDef.radius * 2) ** 2) {
+                const ghostSec = ghostTickAtCp * FIXED_DT;
+                deltaSec = currentSec - ghostSec;
+              }
+            }
+
+            const isAhead = deltaSec !== undefined ? deltaSec <= 0 : true;
+            soundFX.playCheckpoint(isAhead);
+
+            setSplitBadge({
+              sector: cpIndex,
+              deltaSec,
+              currentSec,
+            });
+
+            if (splitBadgeTimerRef.current) clearTimeout(splitBadgeTimerRef.current);
+            splitBadgeTimerRef.current = setTimeout(() => {
+              setSplitBadge(null);
+            }, 3000);
+          }
 
           // Update current position and velocity after tick step
           liveRenderRef.current.currPos = [
@@ -495,6 +597,16 @@ export const App: React.FC = () => {
               origin: { y: 0.6 },
               colors: ['#38bdf8', '#818cf8', '#34d399', '#f43f5e', '#fbbf24'],
             });
+
+            if (isTestDrive) {
+              testDriveReplay.current = {
+                claimedTicks: state.tick,
+                finalHash: state.hash,
+                inputs: [...recordedInputs.current],
+              };
+              setIsCustomVerified(true);
+              setClearCheckSeconds(state.tick * FIXED_DT);
+            }
 
             const currentTicks = state.tick;
             const currentPB = getStoredPB(level.id);
@@ -650,12 +762,23 @@ export const App: React.FC = () => {
           pieces={customPieces}
           trackName={customTrackName}
           theme={customTrackTheme}
-          onPiecesChange={setCustomPieces}
+          onPiecesChange={(newPieces) => {
+            setCustomPieces(newPieces);
+            setIsCustomVerified(false);
+            setClearCheckSeconds(undefined);
+            setPublishedTrackId(null);
+            testDriveReplay.current = null;
+          }}
           onTrackNameChange={setCustomTrackName}
           onThemeChange={setCustomTrackTheme}
           onTestDrive={handleStartTestDrive}
           onExit={() => setIsEditorOpen(false)}
           lang={lang}
+          isVerified={isCustomVerified}
+          clearCheckSeconds={clearCheckSeconds}
+          onPublish={handlePublishTrack}
+          isPublishing={isPublishing}
+          publishedTrackId={publishedTrackId}
         />
       ) : (
         /* Head-Up Display (standard race or active test drive) */
@@ -699,6 +822,7 @@ export const App: React.FC = () => {
           }}
           isTestDrive={isTestDrive}
           onBackToEditor={handleBackToEditor}
+          splitBadge={splitBadge}
         />
       )}
 

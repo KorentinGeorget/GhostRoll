@@ -149,6 +149,29 @@ async function initializeTables(db: DB): Promise<void> {
       created_at TIMESTAMPTZ DEFAULT NOW() NOT NULL
     )
   `);
+
+  await db.execute(`
+    CREATE TABLE IF NOT EXISTS custom_tracks (
+      id TEXT PRIMARY KEY,
+      name TEXT NOT NULL,
+      author_id TEXT NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+      author_name TEXT NOT NULL,
+      theme TEXT NOT NULL,
+      piece_code TEXT NOT NULL,
+      piece_count INTEGER NOT NULL,
+      clear_ticks INTEGER NOT NULL,
+      play_count INTEGER DEFAULT 0 NOT NULL,
+      created_at TIMESTAMPTZ DEFAULT NOW() NOT NULL
+    )
+  `);
+
+  await db.execute(`
+    CREATE INDEX IF NOT EXISTS custom_tracks_created_idx ON custom_tracks (created_at DESC)
+  `);
+
+  await db.execute(`
+    CREATE INDEX IF NOT EXISTS custom_tracks_author_idx ON custom_tracks (author_id)
+  `);
 }
 
 

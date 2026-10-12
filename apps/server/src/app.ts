@@ -2,13 +2,20 @@ import Fastify, { FastifyInstance } from 'fastify';
 import cors from '@fastify/cors';
 import cookie from '@fastify/cookie';
 import crypto from 'node:crypto';
-import { eq, and, sql, asc, gt } from 'drizzle-orm';
-import { DB, getDb, getStorageType, runs, users, syncCodes } from './db/index.js';
+import { eq, and, sql, asc, desc, gt } from 'drizzle-orm';
+import { DB, getDb, getStorageType, runs, users, syncCodes, customTracks } from './db/index.js';
 
 import { getOrCreateGuestUser, linkGoogleAccount } from './services/auth.service.js';
 import { validateReplay } from './services/validation.service.js';
 import { TICKS_PER_SECOND } from '@ghostroll/shared';
-import { LEVEL_1, generateDailyLevel, generateDailyPalette } from '@ghostroll/sim';
+import {
+  LEVEL_1,
+  generateDailyLevel,
+  generateDailyPalette,
+  buildCustomLevel,
+  decodeCustomTrack,
+  decodeTrackPieces,
+} from '@ghostroll/sim';
 
 export interface AppOptions {
   db?: DB;
@@ -77,6 +84,36 @@ export async function buildApp(opts: AppOptions = {}): Promise<FastifyInstance> 
     const { levelId } = request.params;
     if (levelId === LEVEL_1.id || levelId === 'trial-level-1') {
       return { level: LEVEL_1, palette: generateDailyPalette('trial01') };
+    }
+
+    if (levelId.startsWith('custom:')) {
+      const decoded = decodeCustomTrack(levelId.slice(7));
+      return buildCustomLevel(decoded.pieces, { name: decoded.name, theme: decoded.theme });
+    }
+
+    if (levelId.startsWith('ct_')) {
+      const found = await db
+        .select()
+        .from(customTracks)
+        .where(eq(customTracks.id, levelId))
+        .limit(1);
+
+      if (found.length > 0) {
+        const ct = found[0];
+        // Increment play count asynchronously
+        db.update(customTracks)
+          .set({ playCount: sql`${customTracks.playCount} + 1` })
+          .where(eq(customTracks.id, ct.id))
+          .catch(() => {});
+
+        const pieces = decodeTrackPieces(ct.pieceCode);
+        return buildCustomLevel(pieces, {
+          id: ct.id,
+          name: ct.name,
+          author: ct.authorName,
+          theme: ct.theme,
+        });
+      }
     }
 
     if (
@@ -563,6 +600,146 @@ export async function buildApp(opts: AppOptions = {}): Promise<FastifyInstance> 
       levelId,
       totalEntries: leaderboard.length,
       leaderboard,
+    };
+  });
+
+  // Publish Community Custom Track with Mario-Maker style Clear Check verification
+  app.post<{
+    Body: {
+      name: string;
+      theme: string;
+      pieceCode: string;
+      replay: {
+        simVersion: number;
+        claimedTicks: number;
+        finalHash: string;
+        inputs: Array<{ tiltX: number; tiltZ: number; jump?: boolean }>;
+      };
+    };
+  }>('/api/custom-tracks', async (request, reply) => {
+    const rawCookie = request.cookies['gr_token'];
+    const { user, token } = await getOrCreateGuestUser(db, rawCookie);
+
+    if (!rawCookie) {
+      reply.setCookie('gr_token', token, {
+        path: '/',
+        httpOnly: true,
+        sameSite: 'lax',
+        maxAge: 365 * 24 * 3600,
+      });
+    }
+
+    const { name, theme, pieceCode, replay } = request.body || {};
+    if (!name || !pieceCode || !replay || !replay.inputs) {
+      return reply.status(400).send({
+        error: 'INVALID_PAYLOAD',
+        message: 'Name, pieceCode, and verification replay are required',
+      });
+    }
+
+    const pieces = decodeTrackPieces(pieceCode);
+    if (pieces.length === 0) {
+      return reply.status(400).send({
+        error: 'EMPTY_TRACK',
+        message: 'Track must have at least 1 piece',
+      });
+    }
+
+    // Compile level definition
+    const { level } = buildCustomLevel(pieces, {
+      name: name.trim(),
+      theme: theme || 'cyberpunk',
+    });
+
+    // Clear Check verification: Author MUST physically complete course to publish
+    const validation = await validateReplay({
+      levelId: level.id,
+      simVersion: replay.simVersion || 1,
+      claimedTicks: replay.claimedTicks,
+      finalHash: replay.finalHash,
+      inputs: replay.inputs,
+      level,
+    });
+
+    if (!validation.verified) {
+      return reply.status(422).send({
+        success: false,
+        error: 'CLEAR_CHECK_FAILED',
+        message: 'You must complete the course in Test Drive before publishing.',
+        reason: validation.rejectionReason,
+      });
+    }
+
+    const trackId = `ct_${crypto.randomBytes(4).toString('hex')}`;
+    const cleanName = name.trim().slice(0, 40) || 'Custom Track';
+
+    // Insert track into community catalog
+    await db.insert(customTracks).values({
+      id: trackId,
+      name: cleanName,
+      authorId: user.id,
+      authorName: user.displayName,
+      theme: theme || 'cyberpunk',
+      pieceCode,
+      pieceCount: pieces.length,
+      clearTicks: validation.verifiedTicks!,
+      playCount: 1,
+    });
+
+    // Record author's validated run on the track leaderboard
+    const runId = `run_${crypto.randomUUID()}`;
+    await db.insert(runs).values({
+      id: runId,
+      userId: user.id,
+      levelId: trackId,
+      simVersion: replay.simVersion || 1,
+      status: 'verified',
+      claimedTicks: replay.claimedTicks,
+      verifiedTicks: validation.verifiedTicks,
+      finalHash: validation.finalHash!,
+      inputs: JSON.stringify(replay.inputs),
+      ghostSamples: JSON.stringify(validation.ghostSamples),
+    });
+
+    return reply.status(201).send({
+      success: true,
+      track: {
+        id: trackId,
+        name: cleanName,
+        authorName: user.displayName,
+        theme: theme || 'cyberpunk',
+        pieceCode,
+        pieceCount: pieces.length,
+        clearTicks: validation.verifiedTicks,
+        clearTimeSeconds: validation.verifiedTicks! / TICKS_PER_SECOND,
+      },
+    });
+  });
+
+  // Get Community Custom Tracks
+  app.get('/api/custom-tracks', async () => {
+    const list = await db
+      .select({
+        id: customTracks.id,
+        name: customTracks.name,
+        authorId: customTracks.authorId,
+        authorName: customTracks.authorName,
+        theme: customTracks.theme,
+        pieceCode: customTracks.pieceCode,
+        pieceCount: customTracks.pieceCount,
+        clearTicks: customTracks.clearTicks,
+        playCount: customTracks.playCount,
+        createdAt: customTracks.createdAt,
+      })
+      .from(customTracks)
+      .orderBy(desc(customTracks.createdAt))
+      .limit(50);
+
+    return {
+      tracks: list.map((t) => ({
+        ...t,
+        clearTimeSeconds: t.clearTicks / TICKS_PER_SECOND,
+      })),
     };
   });
 

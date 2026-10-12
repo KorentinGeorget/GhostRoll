@@ -43,10 +43,34 @@ export const syncCodes = pgTable('sync_codes', {
   createdAt: timestamp('created_at', { withTimezone: true }).defaultNow().notNull(),
 });
 
+export const customTracks = pgTable(
+  'custom_tracks',
+  {
+    id: text('id').primaryKey(),
+    name: text('name').notNull(),
+    authorId: text('author_id')
+      .notNull()
+      .references(() => users.id, { onDelete: 'cascade' }),
+    authorName: text('author_name').notNull(),
+    theme: text('theme').notNull(),
+    pieceCode: text('piece_code').notNull(),
+    pieceCount: integer('piece_count').notNull(),
+    clearTicks: integer('clear_ticks').notNull(),
+    playCount: integer('play_count').default(0).notNull(),
+    createdAt: timestamp('created_at', { withTimezone: true }).defaultNow().notNull(),
+  },
+  (table) => [
+    index('custom_tracks_created_idx').on(table.createdAt),
+    index('custom_tracks_author_idx').on(table.authorId),
+  ]
+);
+
 export type User = typeof users.$inferSelect;
 export type NewUser = typeof users.$inferInsert;
 export type Run = typeof runs.$inferSelect;
 export type NewRun = typeof runs.$inferInsert;
 export type SyncCode = typeof syncCodes.$inferSelect;
 export type NewSyncCode = typeof syncCodes.$inferInsert;
+export type CustomTrack = typeof customTracks.$inferSelect;
+export type NewCustomTrack = typeof customTracks.$inferInsert;
 

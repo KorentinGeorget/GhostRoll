@@ -2,6 +2,9 @@ import React, { useState, useEffect } from 'react';
 import {
   ArrowLeft,
   Check,
+  CheckCircle2,
+  AlertCircle,
+  CloudUpload,
   Copy,
   Download,
   Flame,
@@ -34,6 +37,11 @@ interface TrackEditorUIProps {
   onTestDrive: () => void;
   onExit: () => void;
   lang?: Language;
+  isVerified?: boolean;
+  clearCheckSeconds?: number;
+  onPublish?: () => Promise<void>;
+  isPublishing?: boolean;
+  publishedTrackId?: string | null;
 }
 
 const PIECE_CONFIGS: Array<{
@@ -136,6 +144,11 @@ export const TrackEditorUI: React.FC<TrackEditorUIProps> = ({
   onTestDrive,
   onExit,
   lang = 'fr',
+  isVerified = false,
+  clearCheckSeconds,
+  onPublish,
+  isPublishing = false,
+  publishedTrackId,
 }) => {
   const t = TRANSLATIONS[lang];
   const [copiedLink, setCopiedLink] = useState(false);
@@ -299,6 +312,35 @@ export const TrackEditorUI: React.FC<TrackEditorUIProps> = ({
               {pieces.length} {lang === 'fr' ? 'pièces' : 'pieces'} • ~{estSeconds}s
             </span>
           </div>
+
+          {/* Clear Check Badge */}
+          <div
+            className={`glass-panel hidden lg:flex items-center space-x-1.5 px-3 py-1.5 rounded-xl text-xs font-semibold border ${
+              isVerified
+                ? 'border-emerald-500/40 text-emerald-300 bg-emerald-500/10'
+                : 'border-amber-500/40 text-amber-300 bg-amber-500/10'
+            }`}
+            title={isVerified ? t.clearCheckPassed : t.clearCheckNeeded}
+          >
+            {isVerified ? (
+              <>
+                <CheckCircle2 className="w-3.5 h-3.5 text-emerald-400" />
+                <span>{t.clearCheckPassed}</span>
+                {clearCheckSeconds && (
+                  <span className="font-mono text-[10px] text-emerald-200">
+                    ({clearCheckSeconds.toFixed(2)}s)
+                  </span>
+                )}
+              </>
+            ) : (
+              <>
+                <AlertCircle className="w-3.5 h-3.5 text-amber-400" />
+                <span className="text-[11px] truncate max-w-[200px]">
+                  {t.clearCheckNeeded}
+                </span>
+              </>
+            )}
+          </div>
         </div>
 
         {/* Right: Actions (Theme, Presets, Export/Share, Test Drive) */}
@@ -389,6 +431,31 @@ export const TrackEditorUI: React.FC<TrackEditorUIProps> = ({
               </>
             )}
           </button>
+
+          {/* Publish to Community Button */}
+          {onPublish && (
+            <button
+              onClick={onPublish}
+              disabled={!isVerified || isPublishing}
+              className={`glass-panel px-3 py-2 rounded-xl text-xs font-semibold transition active:scale-95 flex items-center space-x-1.5 cursor-pointer ${
+                isVerified
+                  ? 'border-indigo-400/50 bg-indigo-500/20 text-indigo-200 hover:bg-indigo-500/30 hover:text-white shadow-md shadow-indigo-500/20'
+                  : 'opacity-40 cursor-not-allowed text-zinc-500 border-white/5'
+              }`}
+              title={isVerified ? t.publishToCommunity : t.clearCheckNeeded}
+            >
+              <CloudUpload className="w-3.5 h-3.5 text-indigo-400" />
+              <span className="hidden sm:inline">
+                {isPublishing
+                  ? t.publishing
+                  : publishedTrackId
+                  ? lang === 'fr'
+                    ? 'Publié ✓'
+                    : 'Published ✓'
+                  : t.publishToCommunity}
+              </span>
+            </button>
+          )}
 
           {/* Big Glowing TEST DRIVE Button */}
           <button

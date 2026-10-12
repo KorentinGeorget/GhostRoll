@@ -212,4 +212,58 @@ export async function logoutUser(): Promise<UserProfile | null> {
   }
 }
 
+export interface CommunityTrackItem {
+  id: string;
+  name: string;
+  authorId: string;
+  authorName: string;
+  theme: string;
+  pieceCode: string;
+  pieceCount: number;
+  clearTicks: number;
+  clearTimeSeconds: number;
+  playCount: number;
+  createdAt: string;
+}
+
+export async function fetchCommunityTracks(): Promise<CommunityTrackItem[]> {
+  try {
+    const res = await fetch('/api/custom-tracks', { credentials: 'include' });
+    if (!res.ok) return [];
+    const data = await res.json();
+    return data.tracks || [];
+  } catch (err) {
+    console.warn('Failed to fetch community tracks:', err);
+    return [];
+  }
+}
+
+export async function publishCustomTrack(payload: {
+  name: string;
+  theme: string;
+  pieceCode: string;
+  replay: {
+    simVersion: number;
+    claimedTicks: number;
+    finalHash: string;
+    inputs: Array<{ tiltX: number; tiltZ: number; jump?: boolean }>;
+  };
+}): Promise<{ success: boolean; track?: CommunityTrackItem; error?: string; reason?: string }> {
+  try {
+    const res = await fetch('/api/custom-tracks', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      credentials: 'include',
+      body: JSON.stringify(payload),
+    });
+    return await res.json();
+  } catch (err: any) {
+    return {
+      success: false,
+      error: 'NETWORK_ERROR',
+      reason: err?.message || 'Erreur réseau lors de la publication du circuit',
+    };
+  }
+}
+
 

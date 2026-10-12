@@ -1,6 +1,6 @@
-import React, { useState } from 'react';
-import { Calendar, Check, Compass, Dices, Flame, Sparkles, Swords, Share2, X, PenTool } from 'lucide-react';
-import { ArchiveItem } from '../api/client.js';
+import React, { useState, useEffect } from 'react';
+import { Calendar, Check, Compass, Dices, Flame, Sparkles, Swords, Share2, X, PenTool, Users, Trophy } from 'lucide-react';
+import { ArchiveItem, CommunityTrackItem, fetchCommunityTracks } from '../api/client.js';
 import { Language, TRANSLATIONS } from '../i18n/translations.js';
 
 interface TrackSelectorModalProps {
@@ -35,6 +35,17 @@ export const TrackSelectorModal: React.FC<TrackSelectorModalProps> = ({
   const t = TRANSLATIONS[lang];
   const [customSeedInput, setCustomSeedInput] = useState('');
   const [copiedLink, setCopiedLink] = useState(false);
+  const [communityTracks, setCommunityTracks] = useState<CommunityTrackItem[]>([]);
+  const [communityLoading, setCommunityLoading] = useState(false);
+
+  useEffect(() => {
+    if (isOpen) {
+      setCommunityLoading(true);
+      fetchCommunityTracks()
+        .then((tracks) => setCommunityTracks(tracks))
+        .finally(() => setCommunityLoading(false));
+    }
+  }, [isOpen]);
 
   if (!isOpen) return null;
 
@@ -233,6 +244,85 @@ export const TrackSelectorModal: React.FC<TrackSelectorModalProps> = ({
                   </div>
                 )}
               </button>
+            )}
+          </div>
+
+          {/* Community Published Tracks */}
+          <div>
+            <div className="flex items-center justify-between mb-2">
+              <div className="flex items-center space-x-2 text-xs font-bold uppercase tracking-wider text-zinc-400">
+                <Users className="w-3.5 h-3.5 text-indigo-400" />
+                <span>{t.communityTracks}</span>
+                <span className="text-[10px] font-mono px-1.5 py-0.2 rounded bg-indigo-500/20 text-indigo-300 border border-indigo-500/30">
+                  {communityTracks.length}
+                </span>
+              </div>
+              {onOpenEditor && (
+                <button
+                  type="button"
+                  onClick={() => {
+                    onClose();
+                    onOpenEditor();
+                  }}
+                  className="text-[11px] font-semibold text-cyan-400 hover:text-cyan-300 transition cursor-pointer"
+                >
+                  + {t.trackEditor}
+                </button>
+              )}
+            </div>
+
+            {communityLoading ? (
+              <div className="py-6 flex flex-col items-center justify-center space-y-2 text-zinc-400 text-xs">
+                <div className="w-5 h-5 rounded-full border-2 border-indigo-400 border-t-transparent animate-spin" />
+              </div>
+            ) : communityTracks.length === 0 ? (
+              <div className="p-4 rounded-xl bg-white/[0.02] border border-white/[0.06] text-center text-xs text-zinc-400">
+                {lang === 'fr'
+                  ? 'Aucun circuit communautaire pour l’instant. Soyez le premier à en publier un dans l’Éditeur !'
+                  : 'No community tracks yet. Be the first to build and publish one!'}
+              </div>
+            ) : (
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-2.5">
+                {communityTracks.map((ct) => (
+                  <button
+                    key={ct.id}
+                    onClick={() => {
+                      onSelectLevel(ct.id);
+                      onClose();
+                    }}
+                    className={`p-3 rounded-xl border text-left transition flex items-center justify-between group cursor-pointer active:scale-[0.99] ${
+                      currentLevelId === ct.id
+                        ? 'bg-zinc-800/80 border-cyan-400/50 ring-1 ring-cyan-400/40'
+                        : 'bg-white/[0.03] hover:bg-white/[0.06] border-white/[0.08] hover:border-white/15'
+                    }`}
+                  >
+                    <div className="min-w-0 pr-2">
+                      <div className="flex items-center space-x-2">
+                        <span className="font-bold text-white text-sm truncate">
+                          {ct.name}
+                        </span>
+                        <span className="text-[9px] font-mono uppercase px-1.5 py-0.2 rounded bg-indigo-500/20 text-indigo-300 border border-indigo-500/30 shrink-0">
+                          {ct.pieceCount}p
+                        </span>
+                      </div>
+                      <div className="flex items-center space-x-2 text-[11px] text-zinc-400 mt-0.5">
+                        <span className="truncate">{ct.authorName}</span>
+                        <span>•</span>
+                        <span className="font-mono text-cyan-300 font-semibold">
+                          ⏱ {ct.clearTimeSeconds.toFixed(2)}s
+                        </span>
+                      </div>
+                    </div>
+                    {currentLevelId === ct.id ? (
+                      <Check className="w-4 h-4 text-cyan-400 shrink-0" />
+                    ) : (
+                      <span className="text-xs text-zinc-500 group-hover:text-white transition shrink-0">
+                        →
+                      </span>
+                    )}
+                  </button>
+                ))}
+              </div>
             )}
           </div>
 
