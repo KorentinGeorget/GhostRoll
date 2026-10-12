@@ -120,7 +120,9 @@ export async function buildApp(opts: AppOptions = {}): Promise<FastifyInstance> 
     const clientId = process.env.GOOGLE_CLIENT_ID;
     const host = request.headers.host || 'localhost:3001';
     const protocol = request.headers['x-forwarded-proto'] || 'http';
-    const redirectUri = `${protocol}://${host}/api/auth/google/callback`;
+    const redirectUri = process.env.APP_URL
+      ? `${process.env.APP_URL.replace(/\/$/, '')}/api/auth/google/callback`
+      : `${protocol}://${host}/api/auth/google/callback`;
 
     if (!clientId) {
       // Demo fallback: enables testing in sandbox / local / portfolio environments
@@ -172,7 +174,9 @@ export async function buildApp(opts: AppOptions = {}): Promise<FastifyInstance> 
 
       const host = request.headers.host || 'localhost:3001';
       const protocol = request.headers['x-forwarded-proto'] || 'http';
-      const redirectUri = `${protocol}://${host}/api/auth/google/callback`;
+      const redirectUri = process.env.APP_URL
+        ? `${process.env.APP_URL.replace(/\/$/, '')}/api/auth/google/callback`
+        : `${protocol}://${host}/api/auth/google/callback`;
 
       const tokenRes = await fetch('https://oauth2.googleapis.com/token', {
         method: 'POST',

@@ -27,6 +27,9 @@ services:
       PORT: 3001
       DATABASE_URL: postgres://ghostroll:${POSTGRES_PASSWORD:-ghostroll_secure_password}@db:5432/ghostroll
       COOKIE_SECRET: ${COOKIE_SECRET:-ghostroll-super-secret-cookie-key-production-32chars}
+      GOOGLE_CLIENT_ID: ${GOOGLE_CLIENT_ID:-}
+      GOOGLE_CLIENT_SECRET: ${GOOGLE_CLIENT_SECRET:-}
+      APP_URL: ${APP_URL:-}
     healthcheck:
       test: ["CMD-SHELL", "node -e 'fetch(\"http://127.0.0.1:3001/health\").then(r => process.exit(r.ok ? 0 : 1)).catch(() => process.exit(1))'"]
       interval: 5s
