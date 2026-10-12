@@ -1,4 +1,5 @@
 import {
+  CheckpointDef,
   ColliderDef,
   LevelDefinition,
   SIM_VERSION,
@@ -40,6 +41,7 @@ export function generateDailyLevel(seed: string, options?: GenerateOptions): Gen
   const colliders: ColliderDef[] = [];
   const visuals: TileVisual[] = [];
   const occupiedBoxes: BoundingBox2D[] = [];
+  const checkpoints: CheckpointDef[] = [];
 
   // Start tile at origin
   let curX = 0;
@@ -93,34 +95,63 @@ export function generateDailyLevel(seed: string, options?: GenerateOptions): Gen
 
   const baseSegments =
     options?.difficulty === 'extreme'
-      ? rng.nextInt(13, 16)
+      ? rng.nextInt(26, 30)
       : options?.difficulty === 'hard'
-      ? rng.nextInt(11, 14)
-      : rng.nextInt(9, 12);
+      ? rng.nextInt(23, 27)
+      : rng.nextInt(21, 25);
   const numSegments = options?.segments ?? baseSegments;
   let prevPieceType = 'start';
   let tileIndex = 1;
 
   for (let s = 0; s < numSegments; s++) {
+    // Add sector timing lines at 1/3 and 2/3 of the track
+    if (s === Math.floor(numSegments / 3) && checkpoints.length === 0) {
+      checkpoints.push({
+        index: 1,
+        position: [curX, curY + 0.3, curZ],
+        radius: 3.5,
+      });
+      visuals.push({
+        id: `vis-cp-1`,
+        type: 'checkpoint',
+        position: [curX, curY + 0.26, curZ],
+        scale: [4.4, 0.05, 0.4],
+        checkpointIndex: 1,
+      });
+    } else if (s === Math.floor((numSegments * 2) / 3) && checkpoints.length === 1) {
+      checkpoints.push({
+        index: 2,
+        position: [curX, curY + 0.3, curZ],
+        radius: 3.5,
+      });
+      visuals.push({
+        id: `vis-cp-2`,
+        type: 'checkpoint',
+        position: [curX, curY + 0.26, curZ],
+        scale: [4.4, 0.05, 0.4],
+        checkpointIndex: 2,
+      });
+    }
+
     // Choose segment type according to fair, solvable racing transition rules
     let possibleTypes: Array<
-      'straight' | 'ramp' | 'corner_right' | 'corner_left' | 'bridge' | 'jump_gap' | 'chicane' | 'booster'
-    > = ['straight', 'ramp', 'bridge', 'jump_gap', 'booster'];
+      'straight' | 'ramp' | 'corner_right' | 'corner_left' | 'bridge' | 'jump_gap' | 'chicane' | 'booster' | 'ice' | 'drop'
+    > = ['straight', 'ramp', 'bridge', 'ice', 'drop'];
 
     if (s === 0) {
       // Tile 1 must always be straight or ramp to give a clean, fair launch
       possibleTypes = ['straight', 'ramp'];
     } else if (prevPieceType === 'booster') {
-      // Must follow booster with straight/ramp to allow safe deceleration & coasting
-      possibleTypes = ['straight', 'ramp'];
+      // Must follow booster with straight/ramp/drop/ice for high-speed coasting
+      possibleTypes = ['straight', 'ramp', 'drop', 'ice'];
     } else if (prevPieceType === 'jump_gap') {
       // Must follow jump gap with straight/ramp to catch landing cleanly
       possibleTypes = ['straight', 'ramp'];
     } else if (prevPieceType === 'corner_right' || prevPieceType === 'corner_left') {
       // Avoid immediate S-whips into another corner or void jump right after a turn
-      possibleTypes = ['straight', 'ramp', 'bridge', 'booster'];
+      possibleTypes = ['straight', 'ramp', 'bridge', 'booster', 'ice'];
     } else {
-      possibleTypes.push('corner_right', 'corner_left', 'chicane');
+      possibleTypes.push('corner_right', 'corner_left', 'chicane', 'booster', 'jump_gap', 'ice', 'drop');
     }
 
     // Shuffle candidates deterministically using seeded RNG
@@ -519,6 +550,120 @@ export function generateDailyLevel(seed: string, options?: GenerateOptions): Gen
         prevPieceType = 'booster';
         placed = true;
         break;
+      } else if (pieceType === 'ice') {
+        const length = 7.5;
+        const dY = -0.15;
+        const posX = curX + heading.dx * (length / 2);
+        const posZ = curZ + heading.dz * (length / 2);
+        const posY = curY + dY / 2;
+
+        const hx = heading.dx !== 0 ? length / 2 : 2.3;
+        const hz = heading.dz !== 0 ? length / 2 : 2.3;
+
+        const box: BoundingBox2D = {
+          minX: posX - hx - 0.2,
+          maxX: posX + hx + 0.2,
+          minZ: posZ - hz - 0.2,
+          maxZ: posZ + hz + 0.2,
+        };
+
+        if (occupiedBoxes.slice(0, -1).some((b) => boxOverlap(b, box))) {
+          continue;
+        }
+
+        colliders.push({
+          type: 'box',
+          halfExtents: [hx, 0.25, hz],
+          position: [posX, posY, posZ],
+          friction: 0.04, // Low-friction slick ice drift
+          restitution: 0.15,
+          isIce: true,
+        });
+
+        visuals.push({
+          id: `vis-ice-${tileIndex++}`,
+          type: 'ice',
+          position: [posX, posY, posZ],
+          scale: [hx * 2, 0.5, hz * 2],
+          color: palette.ice ?? '#c7d2fe',
+        });
+
+        occupiedBoxes.push(box);
+        curX += heading.dx * length;
+        curZ += heading.dz * length;
+        curY += dY;
+        prevPieceType = 'ice';
+        placed = true;
+        break;
+      } else if (pieceType === 'drop') {
+        // Roller-coaster steep downhill drop with lateral retention barriers
+        const length = 7.5;
+        const dY = -0.85;
+        const posX = curX + heading.dx * (length / 2);
+        const posZ = curZ + heading.dz * (length / 2);
+        const posY = curY + dY / 2;
+
+        const hx = heading.dx !== 0 ? length / 2 : 2.4;
+        const hz = heading.dz !== 0 ? length / 2 : 2.4;
+
+        const box: BoundingBox2D = {
+          minX: posX - hx - 0.2,
+          maxX: posX + hx + 0.2,
+          minZ: posZ - hz - 0.2,
+          maxZ: posZ + hz + 0.2,
+        };
+
+        if (occupiedBoxes.slice(0, -1).some((b) => boxOverlap(b, box))) {
+          continue;
+        }
+
+        colliders.push({
+          type: 'box',
+          halfExtents: [hx, 0.25, hz],
+          position: [posX, posY, posZ],
+          friction: 0.35,
+          restitution: 0.2,
+        });
+
+        const perpX = -heading.dz;
+        const perpZ = heading.dx;
+        const railOffset = 2.4;
+        const railHalfL = length / 2;
+        const railHx = heading.dx !== 0 ? railHalfL : 0.15;
+        const railHz = heading.dz !== 0 ? railHalfL : 0.15;
+
+        colliders.push(
+          {
+            type: 'box',
+            halfExtents: [railHx, 0.45, railHz],
+            position: [posX + perpX * railOffset, posY + 0.55, posZ + perpZ * railOffset],
+            friction: 0.15,
+            restitution: 0.2,
+          },
+          {
+            type: 'box',
+            halfExtents: [railHx, 0.45, railHz],
+            position: [posX - perpX * railOffset, posY + 0.55, posZ - perpZ * railOffset],
+            friction: 0.15,
+            restitution: 0.2,
+          }
+        );
+
+        visuals.push({
+          id: `vis-drop-${tileIndex++}`,
+          type: 'ramp',
+          position: [posX, posY, posZ],
+          scale: [hx * 2, 0.5, hz * 2],
+          color: palette.trackSecondary,
+        });
+
+        occupiedBoxes.push(box);
+        curX += heading.dx * length;
+        curZ += heading.dz * length;
+        curY += dY;
+        prevPieceType = 'drop';
+        placed = true;
+        break;
       }
     }
 
@@ -603,6 +748,7 @@ export function generateDailyLevel(seed: string, options?: GenerateOptions): Gen
       position: [goalX, goalY + 0.5, goalZ],
       radius: 2.4,
     },
+    checkpoints,
     deathY: Math.min(lowestY, goalY) - 10.0,
     colliders,
     visuals,

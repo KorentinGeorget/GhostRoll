@@ -388,6 +388,28 @@ export const BoardMesh: React.FC<BoardMeshProps> = ({ level, palette, tilt: _til
           );
         }
 
+        if (vis.type === 'checkpoint') {
+          const width = vis.scale?.[0] || 4.2;
+          return (
+            <group key={vis.id} position={vis.position}>
+              {/* Sleek Trackmania Ground Split Timing Line */}
+              <mesh rotation={[-Math.PI / 2, 0, 0]} receiveShadow>
+                <planeGeometry args={[width, 0.35]} />
+                <meshBasicMaterial color="#38bdf8" transparent opacity={0.8} side={THREE.DoubleSide} />
+              </mesh>
+              {/* Subtle luminous edge beacons */}
+              <mesh position={[-width / 2 + 0.1, 0.15, 0]}>
+                <cylinderGeometry args={[0.06, 0.08, 0.3, 12]} />
+                <meshStandardMaterial color="#38bdf8" emissive="#38bdf8" emissiveIntensity={1.8} />
+              </mesh>
+              <mesh position={[width / 2 - 0.1, 0.15, 0]}>
+                <cylinderGeometry args={[0.06, 0.08, 0.3, 12]} />
+                <meshStandardMaterial color="#38bdf8" emissive="#38bdf8" emissiveIntensity={1.8} />
+              </mesh>
+            </group>
+          );
+        }
+
         if (vis.type === 'goal') {
           return (
             <GoalPlatform

@@ -55,7 +55,7 @@ describe('Procedural Daily Level Generator', () => {
     let wp = 0;
     let won = false;
 
-    for (let t = 0; t < 1200; t++) {
+    for (let t = 0; t < 3000; t++) {
       const state = sim.getState();
       const pos = state.ball.position;
       const vel = state.ball.velocity;
@@ -111,7 +111,7 @@ describe('Procedural Daily Level Generator', () => {
       let wp = 0;
       let won = false;
 
-      for (let t = 0; t < 1500; t++) {
+      for (let t = 0; t < 3000; t++) {
         const state = sim.getState();
         const pos = state.ball.position;
         const vel = state.ball.velocity;
