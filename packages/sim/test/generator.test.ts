@@ -1,7 +1,16 @@
-import { describe, it, expect } from 'vitest';
-import { generateDailyLevel, generateDailyPalette } from '../src/index.js';
+import { describe, it, expect, beforeAll } from 'vitest';
+import {
+  generateDailyLevel,
+  generateDailyPalette,
+  initPhysics,
+  createSimulation,
+} from '../src/index.js';
 
 describe('Procedural Daily Level Generator', () => {
+  beforeAll(async () => {
+    await initPhysics();
+  });
+
   it('generates bit-exact identical level definitions for the same seed', () => {
     const run1 = generateDailyLevel('2026-10-09');
     const run2 = generateDailyLevel('2026-10-09');
@@ -32,5 +41,106 @@ describe('Procedural Daily Level Generator', () => {
     expect(level.deathY).toBeLessThan(level.goal.position[1]);
     expect(palette.name).toBeDefined();
     expect(palette.background).toMatch(/^#[0-9a-f]{6}$/i);
+  });
+
+  it('guarantees today level (2026-10-12) is physically beatable by an automated driver', () => {
+    const { level } = generateDailyLevel('2026-10-12');
+    const sim = createSimulation(level);
+
+    const waypoints = level.visuals
+      .filter((v) => v.type !== 'bumper')
+      .map((v) => v.position);
+    waypoints.push(level.goal.position);
+
+    let wp = 0;
+    let won = false;
+
+    for (let t = 0; t < 1200; t++) {
+      const state = sim.getState();
+      const pos = state.ball.position;
+      const vel = state.ball.velocity;
+      const target = waypoints[wp];
+      const dx = target[0] - pos[0];
+      const dz = target[2] - pos[2];
+      const dist = Math.sqrt(dx * dx + dz * dz);
+
+      if (dist < 3.0 && wp < waypoints.length - 1) {
+        wp++;
+      }
+
+      const targetVx = Math.max(-12, Math.min(12, dx * 3.0));
+      const targetVz = Math.max(-12, Math.min(12, dz * 3.0));
+      const tiltX = Math.round(Math.max(-127, Math.min(127, (targetVx - vel[0]) * 35)));
+      const tiltZ = Math.round(Math.max(-127, Math.min(127, (targetVz - vel[2]) * 35)));
+
+      const nextState = sim.step({ tiltX, tiltZ, jump: false });
+      if (nextState.status === 'won') {
+        won = true;
+        break;
+      }
+      if (nextState.status === 'dead') {
+        break;
+      }
+    }
+    sim.destroy();
+
+    expect(won).toBe(true);
+  });
+
+  it('guarantees 100% of generated daily levels are physically solvable across multiple dates', () => {
+    const testSeeds = [
+      '2026-10-01',
+      '2026-10-05',
+      '2026-10-10',
+      '2026-10-12',
+      '2026-10-15',
+      '2026-10-20',
+      '2026-10-25',
+      '2026-10-31',
+    ];
+
+    for (const seed of testSeeds) {
+      const { level } = generateDailyLevel(seed);
+      const sim = createSimulation(level);
+
+      const waypoints = level.visuals
+        .filter((v) => v.type !== 'bumper')
+        .map((v) => v.position);
+      waypoints.push(level.goal.position);
+
+      let wp = 0;
+      let won = false;
+
+      for (let t = 0; t < 1500; t++) {
+        const state = sim.getState();
+        const pos = state.ball.position;
+        const vel = state.ball.velocity;
+        const target = waypoints[wp];
+        const dx = target[0] - pos[0];
+        const dz = target[2] - pos[2];
+        const dist = Math.sqrt(dx * dx + dz * dz);
+
+        if (dist < 3.0 && wp < waypoints.length - 1) {
+          wp++;
+        }
+
+        const targetVx = Math.max(-12, Math.min(12, dx * 3.0));
+        const targetVz = Math.max(-12, Math.min(12, dz * 3.0));
+        const tiltX = Math.round(Math.max(-127, Math.min(127, (targetVx - vel[0]) * 35)));
+        const tiltZ = Math.round(Math.max(-127, Math.min(127, (targetVz - vel[2]) * 35)));
+
+        const nextState = sim.step({ tiltX, tiltZ, jump: false });
+        if (nextState.status === 'won') {
+          won = true;
+          break;
+        }
+        if (nextState.status === 'dead') {
+          break;
+        }
+      }
+      sim.destroy();
+
+      expect(won, `Level for seed ${seed} must be physically completable`).toBe(true);
+    }
   });
 });
