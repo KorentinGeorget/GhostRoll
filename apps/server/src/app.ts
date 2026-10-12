@@ -125,10 +125,9 @@ export async function buildApp(opts: AppOptions = {}): Promise<FastifyInstance> 
       : `${protocol}://${host}/api/auth/google/callback`;
 
     if (!clientId) {
-      // Demo fallback: enables testing in sandbox / local / portfolio environments
       return {
         configured: false,
-        url: `/api/auth/google/callback?demo=true`,
+        url: '',
       };
     }
 
@@ -148,29 +147,26 @@ export async function buildApp(opts: AppOptions = {}): Promise<FastifyInstance> 
   app.get<{
     Querystring: { code?: string; demo?: string; error?: string };
   }>('/api/auth/google/callback', async (request, reply) => {
-    const { code, demo, error } = request.query;
+    const { code, error } = request.query;
     if (error) {
       return reply.redirect('/?auth=error&message=' + encodeURIComponent(error));
+    }
+
+    if (!process.env.GOOGLE_CLIENT_ID) {
+      return reply.redirect(
+        '/?auth=error&message=' +
+          encodeURIComponent('Google OAuth is not configured on server (missing GOOGLE_CLIENT_ID)')
+      );
+    }
+
+    if (!code) {
+      return reply.redirect('/?auth=error&message=No+code+provided');
     }
 
     const rawCookie = request.cookies['gr_token'];
     const { user: currentUser } = await getOrCreateGuestUser(db, rawCookie);
 
     let googleProfile: { googleId: string; email: string; displayName?: string; avatarUrl?: string };
-
-    if (demo === 'true' || !process.env.GOOGLE_CLIENT_ID) {
-      // Demo profile based on guest user
-      const cleanName = currentUser.displayName.replace(/[^a-zA-Z0-9]/g, '').toLowerCase();
-      googleProfile = {
-        googleId: 'demo-google-' + currentUser.id.slice(0, 12),
-        email: `${cleanName || 'player'}@gmail.com`,
-        displayName: currentUser.displayName,
-        avatarUrl: `https://api.dicebear.com/7.x/bottts/svg?seed=${currentUser.id}`,
-      };
-    } else {
-      if (!code) {
-        return reply.redirect('/?auth=error&message=No+code+provided');
-      }
 
       const host = request.headers.host || 'localhost:3001';
       const protocol = request.headers['x-forwarded-proto'] || 'http';
@@ -216,9 +212,8 @@ export async function buildApp(opts: AppOptions = {}): Promise<FastifyInstance> 
         displayName: userInfo.name || currentUser.displayName,
         avatarUrl: userInfo.picture,
       };
-    }
 
-    const { user: linkedUser, token } = await linkGoogleAccount(db, currentUser.id, googleProfile);
+      const { user: linkedUser, token } = await linkGoogleAccount(db, currentUser.id, googleProfile);
 
     reply.setCookie('gr_token', token, {
       path: '/',

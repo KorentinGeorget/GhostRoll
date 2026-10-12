@@ -30,6 +30,18 @@ export const ProfileModal: React.FC<ProfileModalProps> = ({
 
   // Google OAuth
   const [isLoggingOut, setIsLoggingOut] = useState(false);
+  const [googleLoading, setGoogleLoading] = useState(false);
+  const [googleError, setGoogleError] = useState<string | null>(null);
+  const [googleConfigured, setGoogleConfigured] = useState<boolean | null>(null);
+
+  useEffect(() => {
+    if (isOpen) {
+      setGoogleError(null);
+      fetchGoogleAuthUrl().then((res) => {
+        setGoogleConfigured(res?.configured ?? false);
+      });
+    }
+  }, [isOpen]);
 
   // Sync Code generation
   const [generatedCode, setGeneratedCode] = useState<{
@@ -107,9 +119,18 @@ export const ProfileModal: React.FC<ProfileModalProps> = ({
   };
 
   const handleGoogleLogin = async () => {
+    setGoogleLoading(true);
+    setGoogleError(null);
     const authUrl = await fetchGoogleAuthUrl();
-    if (authUrl?.url) {
+    setGoogleLoading(false);
+    if (authUrl?.configured && authUrl.url) {
       window.location.href = authUrl.url;
+    } else {
+      setGoogleError(
+        lang === 'fr'
+          ? "Authentification Google non configurée sur le serveur. Définissez GOOGLE_CLIENT_ID et GOOGLE_CLIENT_SECRET dans l'onglet Environment Variables de Coolify, puis redéployez l'application."
+          : "Google authentication is not configured on the server. Set GOOGLE_CLIENT_ID and GOOGLE_CLIENT_SECRET in Coolify Environment Variables, then redeploy."
+      );
     }
   };
 
@@ -204,11 +225,32 @@ export const ProfileModal: React.FC<ProfileModalProps> = ({
                   </svg>
                 </div>
                 <div>
-                  <h3 className="text-sm font-bold text-white">{t.googleAuthTitle}</h3>
+                  <div className="flex items-center space-x-2">
+                    <h3 className="text-sm font-bold text-white">{t.googleAuthTitle}</h3>
+                    {googleConfigured === false && !userProfile?.isGoogleLinked && (
+                      <span className="text-[10px] font-medium px-2 py-0.5 rounded-full bg-amber-500/15 border border-amber-500/25 text-amber-300">
+                        {lang === 'fr' ? 'À configurer sur Coolify' : 'Config required'}
+                      </span>
+                    )}
+                  </div>
                   <p className="text-[11px] text-zinc-400 font-normal">{t.googleAuthDesc}</p>
                 </div>
               </div>
             </div>
+
+            {googleError && (
+              <div className="p-3 rounded-lg bg-amber-500/10 border border-amber-500/20 flex items-start space-x-2.5 text-xs text-amber-200">
+                <AlertCircle className="w-4 h-4 shrink-0 text-amber-400 mt-0.5" />
+                <div className="space-y-1">
+                  <p className="font-semibold">{googleError}</p>
+                  <p className="text-[11px] text-amber-300/80">
+                    {lang === 'fr'
+                      ? "Dans Coolify > Environment Variables : ajoutez GOOGLE_CLIENT_ID, GOOGLE_CLIENT_SECRET et APP_URL, puis cliquez sur Redéployer."
+                      : "In Coolify > Environment Variables: add GOOGLE_CLIENT_ID, GOOGLE_CLIENT_SECRET, and APP_URL, then click Redeploy."}
+                  </p>
+                </div>
+              </div>
+            )}
 
             {userProfile?.isGoogleLinked ? (
               <div className="flex items-center justify-between p-3 rounded-lg bg-emerald-500/10 border border-emerald-500/20">
@@ -243,7 +285,8 @@ export const ProfileModal: React.FC<ProfileModalProps> = ({
             ) : (
               <button
                 onClick={handleGoogleLogin}
-                className="w-full py-2.5 px-4 rounded-lg bg-white hover:bg-zinc-200 text-zinc-950 font-bold text-xs shadow transition active:scale-98 flex items-center justify-center space-x-2 cursor-pointer"
+                disabled={googleLoading}
+                className="w-full py-2.5 px-4 rounded-lg bg-white hover:bg-zinc-200 text-zinc-950 font-bold text-xs shadow transition active:scale-98 flex items-center justify-center space-x-2 cursor-pointer disabled:opacity-50"
               >
                 <svg className="w-4 h-4 shrink-0" viewBox="0 0 24 24">
                   <path
