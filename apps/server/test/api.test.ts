@@ -321,5 +321,39 @@ describe('Server API & Replay Verification Pipeline', () => {
     const loadBody = loadRes.json();
     expect(loadBody.level.name).toBe('Speedy Sprint');
     expect(loadBody.level.colliders.length).toBeGreaterThan(1);
+
+    // Verify community track run submission via POST /api/runs
+    const runRes = await app.inject({
+      method: 'POST',
+      url: '/api/runs',
+      payload: {
+        levelId: pubBody.track.id,
+        simVersion: 1,
+        claimedTicks,
+        finalHash,
+        inputs,
+      },
+    });
+
+    expect(runRes.statusCode).toBe(200);
+    const runBody = runRes.json();
+    expect(runBody.success).toBe(true);
+    expect(runBody.verifiedTicks).toBe(claimedTicks);
+
+    // Verify unknown community track returns 422
+    const unknownRes = await app.inject({
+      method: 'POST',
+      url: '/api/runs',
+      payload: {
+        levelId: 'ct_00000000',
+        simVersion: 1,
+        claimedTicks,
+        finalHash,
+        inputs,
+      },
+    });
+
+    expect(unknownRes.statusCode).toBe(422);
+    expect(unknownRes.json().reason).toContain('UNKNOWN_LEVEL');
   });
 });

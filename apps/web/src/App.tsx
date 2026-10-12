@@ -234,6 +234,7 @@ export const App: React.FC = () => {
       setCustomTrackTheme(decoded.theme);
       setCustomPieces(decoded.pieces);
       const built = buildCustomLevel(decoded.pieces, {
+        id: trackId,
         name: decoded.name,
         theme: decoded.theme,
       });
@@ -429,7 +430,8 @@ export const App: React.FC = () => {
         setPublishedTrackId(res.track.id);
         alert(TRANSLATIONS[lang].publishedSuccess);
       } else {
-        alert(res.error || 'Erreur lors de la publication du circuit');
+        const errorDetail = (res as any).reason ? ` : ${(res as any).reason}` : '';
+        alert(((res as any).message || res.error || 'Erreur lors de la publication du circuit') + errorDetail);
       }
     } catch (err: any) {
       alert(err?.message || 'Erreur de connexion');
@@ -606,17 +608,25 @@ export const App: React.FC = () => {
               };
               setIsCustomVerified(true);
               setClearCheckSeconds(state.tick * FIXED_DT);
+              setSubmitStatus('verified');
+              setSubmitMessage(
+                lang === 'fr'
+                  ? 'Tracé validé pour publication !'
+                  : 'Track verified for publication!'
+              );
+              return;
             }
 
+            const activeLevel = isEditorOpen ? customCompiled.level : level;
             const currentTicks = state.tick;
-            const currentPB = getStoredPB(level.id);
+            const currentPB = getStoredPB(activeLevel.id);
 
             const isBetter = !currentPB || currentTicks < currentPB.ticks;
             const replayPayload: ReplayPayload & { claimedTicks: number } = {
               magic: 'GRRP',
               formatVersion: 1,
-              simVersion: level.simVersion,
-              levelId: level.id,
+              simVersion: activeLevel.simVersion,
+              levelId: activeLevel.id,
               tickCount: currentTicks,
               claimedTicks: currentTicks,
               finalHash: state.hash,
@@ -626,7 +636,7 @@ export const App: React.FC = () => {
             if (isBetter) {
               setIsNewPB(true);
               const newPB: StoredPB = {
-                levelId: level.id,
+                levelId: activeLevel.id,
                 ticks: currentTicks,
                 timeSeconds: currentTicks * FIXED_DT,
                 date: new Date().toISOString(),

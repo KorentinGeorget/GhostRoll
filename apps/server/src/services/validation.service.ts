@@ -54,19 +54,25 @@ export async function validateReplay(req: ValidationRequest): Promise<Validation
       try {
         const decoded = decodeCustomTrack(req.levelId.slice(7));
         level = buildCustomLevel(decoded.pieces, {
+          id: req.levelId,
           name: decoded.name,
           theme: decoded.theme,
         }).level;
       } catch {
         level = null;
       }
+    } else if (req.levelId.startsWith('ct_')) {
+      // Community tracks must be passed in req.level (resolved from DB)
+      return {
+        verified: false,
+        rejectionReason: `UNKNOWN_LEVEL: community track ${req.levelId} was not found`,
+      };
     } else if (
       req.levelId.startsWith('daily-') ||
       req.levelId.startsWith('seed-') ||
-      req.levelId.startsWith('custom-') ||
       req.levelId.startsWith('random-')
     ) {
-      const seed = req.levelId.replace(/^(daily-|seed-|custom-|random-)/, '');
+      const seed = req.levelId.replace(/^(daily-|seed-|random-)/, '');
       try {
         level = generateDailyLevel(seed).level;
       } catch {

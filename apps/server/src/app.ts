@@ -7,7 +7,7 @@ import { DB, getDb, getStorageType, runs, users, syncCodes, customTracks } from 
 
 import { getOrCreateGuestUser, linkGoogleAccount } from './services/auth.service.js';
 import { validateReplay } from './services/validation.service.js';
-import { TICKS_PER_SECOND } from '@ghostroll/shared';
+import { TICKS_PER_SECOND, LevelDefinition } from '@ghostroll/shared';
 import {
   LEVEL_1,
   generateDailyLevel,
@@ -88,7 +88,7 @@ export async function buildApp(opts: AppOptions = {}): Promise<FastifyInstance> 
 
     if (levelId.startsWith('custom:')) {
       const decoded = decodeCustomTrack(levelId.slice(7));
-      return buildCustomLevel(decoded.pieces, { name: decoded.name, theme: decoded.theme });
+      return buildCustomLevel(decoded.pieces, { id: levelId, name: decoded.name, theme: decoded.theme });
     }
 
     if (levelId.startsWith('ct_')) {
@@ -492,6 +492,26 @@ export async function buildApp(opts: AppOptions = {}): Promise<FastifyInstance> 
       return reply.status(400).send({ error: 'MISSING_TICKS' });
     }
 
+    let levelDef: LevelDefinition | undefined;
+    if (body.levelId.startsWith('ct_')) {
+      const found = await db
+        .select()
+        .from(customTracks)
+        .where(eq(customTracks.id, body.levelId))
+        .limit(1);
+
+      if (found.length > 0) {
+        const ct = found[0];
+        const pieces = decodeTrackPieces(ct.pieceCode);
+        levelDef = buildCustomLevel(pieces, {
+          id: ct.id,
+          name: ct.name,
+          author: ct.authorName,
+          theme: ct.theme,
+        }).level;
+      }
+    }
+
     // Perform deterministic re-simulation on the server
     const validation = await validateReplay({
       levelId: body.levelId,
@@ -499,6 +519,7 @@ export async function buildApp(opts: AppOptions = {}): Promise<FastifyInstance> 
       claimedTicks,
       finalHash: body.finalHash,
       inputs: body.inputs,
+      level: levelDef,
     });
 
 

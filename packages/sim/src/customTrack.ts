@@ -352,12 +352,12 @@ export function buildCustomLevel(
       curY += dY;
     } else if (piece === 'drop') {
       const length = 7.5;
-      const dY = -0.85;
+      const dY = -0.6;
       const posX = curX + heading.dx * (length / 2);
       const posZ = curZ + heading.dz * (length / 2);
       const posY = curY + dY / 2;
-      const hx = heading.dx !== 0 ? length / 2 : 2.4;
-      const hz = heading.dz !== 0 ? length / 2 : 2.4;
+      const hx = heading.dx !== 0 ? length / 2 : 2.8;
+      const hz = heading.dz !== 0 ? length / 2 : 2.8;
 
       colliders.push({
         type: 'box',
@@ -444,7 +444,7 @@ export function buildCustomLevel(
         friction: 0.1,
         restitution: 0.2,
         isBoost: true,
-        boostSpeed: 20.0,
+        boostSpeed: 18.0,
         boostDirection: [heading.dx, 0, heading.dz],
       });
 
@@ -490,7 +490,7 @@ export function buildCustomLevel(
       curY += dY;
     } else if (piece === 'jump_gap') {
       const launchLength = 4.5;
-      const gapDistance = 4.0;
+      const gapDistance = 3.0;
       const landingLength = 8.5;
       const dYLaunch = -0.15;
       const dYGap = -0.45;
@@ -530,7 +530,7 @@ export function buildCustomLevel(
         friction: 0.2,
         restitution: 0.3,
         isJumpPad: true,
-        jumpImpulse: 3.8,
+        jumpImpulse: 4.5,
       });
 
       visuals.push({
@@ -657,7 +657,13 @@ export function buildCustomLevel(
   });
 
   const levelName = options?.name?.trim() || 'Custom Circuit';
-  const customId = options?.id || `custom-${Date.now().toString(36)}`;
+  const customId =
+    options?.id ||
+    `custom:${encodeCustomTrack({
+      name: levelName,
+      theme: themeKey,
+      pieces,
+    })}`;
 
   const level: LevelDefinition = {
     id: customId,
