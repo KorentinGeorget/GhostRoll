@@ -29,8 +29,6 @@ export function generateDailyLevel(seed: string, options?: GenerateOptions): Gen
 
   const colliders: ColliderDef[] = [];
   const visuals: TileVisual[] = [];
-  const checkpoints: CheckpointDef[] = [];
-  let cpIndex = 1;
 
   // Start tile at origin
   let curX = 0;
@@ -443,26 +441,6 @@ export function generateDailyLevel(seed: string, options?: GenerateOptions): Gen
       prevPieceType = 'booster';
     }
 
-    if (
-      (s === Math.floor(numSegments * 0.35) || s === Math.floor(numSegments * 0.7)) &&
-      cpIndex <= 2
-    ) {
-      checkpoints.push({
-        index: cpIndex,
-        position: [curX, curY + 0.8, curZ],
-        radius: 3.2,
-      });
-      visuals.push({
-        id: `vis-cp-${cpIndex}`,
-        type: 'checkpoint',
-        position: [curX, curY + 1.2, curZ],
-        scale: [4.0, 2.4, 0.3],
-        color: '#38bdf8',
-        checkpointIndex: cpIndex,
-      });
-      cpIndex++;
-    }
-
     if (curY < lowestY) {
       lowestY = curY;
     }
@@ -513,7 +491,6 @@ export function generateDailyLevel(seed: string, options?: GenerateOptions): Gen
       position: [goalX, goalY + 0.5, goalZ],
       radius: 2.2,
     },
-    checkpoints,
     deathY: Math.min(lowestY, goalY) - 10.0,
     colliders,
     visuals,

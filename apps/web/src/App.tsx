@@ -18,7 +18,7 @@ import {
   Simulation,
 } from '@ghostroll/sim';
 import { CanvasView } from './components/CanvasView.js';
-import { CheckpointSplitInfo, HUD } from './components/HUD.js';
+import { HUD } from './components/HUD.js';
 import { VirtualJoystick } from './components/VirtualJoystick.js';
 import { LeaderboardModal } from './components/LeaderboardModal.js';
 import { TrackSelectorModal } from './components/TrackSelectorModal.js';
@@ -100,10 +100,8 @@ export const App: React.FC = () => {
   const [personalBest, setPersonalBest] = useState<StoredPB | null>(null);
   const [showGhost, setShowGhost] = useState(true);
   const [isNewPB, setIsNewPB] = useState(false);
-  const [lastSplit, setLastSplit] = useState<CheckpointSplitInfo | null>(null);
 
-  // References for Trackmania sector checkpoint & pad effects
-  const lastCheckpointRef = useRef(0);
+  // References for Trackmania pad effects
   const lastBoostRef = useRef(false);
   const lastJumpPadRef = useRef(false);
 
@@ -158,10 +156,8 @@ export const App: React.FC = () => {
     setIsNewPB(false);
     setSubmitStatus('idle');
     setSubmitMessage('');
-    lastCheckpointRef.current = 0;
     lastBoostRef.current = false;
     lastJumpPadRef.current = false;
-    setLastSplit(null);
     soundFX.updateRolling(0, false);
     const initial = simRef.current.getState();
     liveRenderRef.current.prevPos = initial.ball.position;
@@ -379,43 +375,6 @@ export const App: React.FC = () => {
           }
           lastJumpPadRef.current = !!newState.activeEffects?.jump;
 
-          // Trackmania sector checkpoint detection & real-time split delta
-          if (newState.lastCheckpoint && newState.lastCheckpoint > lastCheckpointRef.current) {
-            const cpIndex = newState.lastCheckpoint;
-            lastCheckpointRef.current = cpIndex;
-
-            let ghostCpTick: number | null = null;
-            const targetSamples =
-              activeGhostSource === 'leaderboard' && selectedLeaderboardGhost?.ghostSamples
-                ? selectedLeaderboardGhost.ghostSamples
-                : personalBest?.samples;
-
-            if (targetSamples && level.checkpoints) {
-              const cpDef = level.checkpoints.find((c) => c.index === cpIndex);
-              if (cpDef) {
-                for (const sample of targetSamples) {
-                  const [gTick, gx, gy, gz] = sample;
-                  const dx = gx - cpDef.position[0];
-                  const dy = gy - cpDef.position[1];
-                  const dz = gz - cpDef.position[2];
-                  if (dx * dx + dz * dz <= cpDef.radius * cpDef.radius && Math.abs(dy) <= 3.0) {
-                    ghostCpTick = gTick;
-                    break;
-                  }
-                }
-              }
-            }
-
-            const delta = ghostCpTick !== null ? (newState.tick - ghostCpTick) * FIXED_DT : null;
-            soundFX.playCheckpoint(delta === null || delta <= 0);
-
-            setLastSplit({
-              index: cpIndex,
-              deltaSeconds: delta,
-              splitTime: newState.tick * FIXED_DT,
-              timestamp: Date.now(),
-            });
-          }
 
           // Update current position and velocity after tick step
           liveRenderRef.current.currPos = [
@@ -626,7 +585,6 @@ export const App: React.FC = () => {
         isCalibrated={isCalibrated}
         isMuted={isMuted}
         onToggleMute={handleToggleMute}
-        lastSplit={lastSplit}
       />
 
 

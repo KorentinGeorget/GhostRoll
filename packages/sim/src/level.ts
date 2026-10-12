@@ -9,10 +9,6 @@ export const LEVEL_1: LevelDefinition = {
     position: [12, -1.6, 28],
     radius: 2.2,
   },
-  checkpoints: [
-    { index: 1, position: [0, 0.8, 8.5], radius: 2.5 },
-    { index: 2, position: [7.5, -0.6, 15.0], radius: 2.8 },
-  ],
   deathY: -10,
   colliders: [
     // 1. Start Platform
@@ -215,23 +211,6 @@ export const LEVEL_1: LevelDefinition = {
       position: [4.5, 0.0, 12.6],
       scale: [1.2, 0.8, 1.2],
       color: '#f43f5e',
-    },
-    // Checkpoints
-    {
-      id: 'vis-cp-1',
-      type: 'checkpoint',
-      position: [0, 1.3, 8.5],
-      scale: [4.0, 2.2, 0.3],
-      color: '#38bdf8',
-      checkpointIndex: 1,
-    },
-    {
-      id: 'vis-cp-2',
-      type: 'checkpoint',
-      position: [7.5, -0.1, 15.0],
-      scale: [4.4, 2.2, 0.3],
-      color: '#38bdf8',
-      checkpointIndex: 2,
     },
   ],
 };

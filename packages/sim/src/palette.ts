@@ -38,10 +38,10 @@ export function generateDailyPalette(seed: string): LevelPalette {
 
   return {
     name: `${adj} ${noun}`,
-    background: hslToHex(bgHue, 35, 6),
-    fog: hslToHex(bgHue, 35, 6),
-    trackPrimary: hslToHex(baseHue, 65, 45),
-    trackSecondary: hslToHex((baseHue + 35) % 360, 75, 52),
+    background: hslToHex(bgHue, 45, 12),
+    fog: hslToHex(bgHue, 40, 14),
+    trackPrimary: hslToHex(baseHue, 70, 50),
+    trackSecondary: hslToHex((baseHue + 35) % 360, 75, 55),
     bridge: hslToHex((baseHue + 180) % 360, 85, 55),
     bumper: hslToHex((baseHue + 290) % 360, 90, 60),
     boost: hslToHex((baseHue + 15) % 360, 95, 55),

@@ -6,6 +6,7 @@ import { LiveRenderState } from '../types/render.js';
 import { BoardMesh } from './BoardMesh.js';
 import { BallMesh } from './BallMesh.js';
 import { GhostMesh } from './GhostMesh.js';
+import { SkyEnvironment } from './SkyEnvironment.js';
 
 interface CanvasViewProps {
   level: LevelDefinition;
@@ -223,16 +224,20 @@ export const CanvasView: React.FC<CanvasViewProps> = ({
   return (
     <Canvas
       shadows
-      camera={{ position: [-6, 12, -10], fov: 42, near: 0.1, far: 200 }}
+      camera={{ position: [-6, 12, -10], fov: 42, near: 0.1, far: 350 }}
       gl={{ antialias: true, alpha: false, powerPreference: 'high-performance' }}
       style={{ background: bg }}
     >
       <color attach="background" args={[bg]} />
-      <fog attach="fog" args={[fogColor, 30, 80]} />
+      <fog attach="fog" args={[fogColor, 65, 230]} />
 
-      <ambientLight intensity={0.7} />
+      <ambientLight intensity={0.6} />
       <DynamicSun liveRenderRef={liveRenderRef} fallbackPos={ballPos} />
-      <directionalLight position={[-15, 10, -10]} intensity={0.4} color="#6366f1" />
+      <directionalLight position={[-15, 12, -10]} intensity={0.5} color="#818cf8" />
+      <directionalLight position={[18, -8, 15]} intensity={0.25} color="#38bdf8" />
+
+      {/* Atmospheric Horizon & Sky Environment (Cloud Sea, Horizon Spires, Celestial Core, Star Dust) */}
+      <SkyEnvironment palette={palette} />
 
       {/* Track & props (stationary, exactly matching physics colliders) */}
       <BoardMesh level={level} palette={palette} tilt={tilt} />
