@@ -1,4 +1,5 @@
 import {
+  CheckpointDef,
   ColliderDef,
   LevelDefinition,
   SIM_VERSION,
@@ -28,6 +29,8 @@ export function generateDailyLevel(seed: string, options?: GenerateOptions): Gen
 
   const colliders: ColliderDef[] = [];
   const visuals: TileVisual[] = [];
+  const checkpoints: CheckpointDef[] = [];
+  let cpIndex = 1;
 
   // Start tile at origin
   let curX = 0;
@@ -268,15 +271,28 @@ export function generateDailyLevel(seed: string, options?: GenerateOptions): Gen
         color: palette.trackSecondary,
       });
 
-      // Launch Lip / Jump indicator bumper
+      // Launch Lip / Super Jump Pad
       const lipX = curX + heading.dx * (launchLength - 0.2);
       const lipZ = curZ + heading.dz * (launchLength - 0.2);
+      const lipHx = heading.dx !== 0 ? 0.6 : 1.8;
+      const lipHz = heading.dz !== 0 ? 0.6 : 1.8;
+
+      colliders.push({
+        type: 'box',
+        halfExtents: [lipHx, 0.15, lipHz],
+        position: [lipX, launchPosY + 0.22, lipZ],
+        friction: 0.2,
+        restitution: 0.3,
+        isJumpPad: true,
+        jumpImpulse: 15.0,
+      });
+
       visuals.push({
-        id: `vis-kicker-${tileIndex++}`,
-        type: 'bumper',
-        position: [lipX, launchPosY + 0.2, lipZ],
-        scale: [heading.dx !== 0 ? 0.3 : 3.8, 0.15, heading.dz !== 0 ? 0.3 : 3.8],
-        color: palette.bumper,
+        id: `vis-jump-${tileIndex++}`,
+        type: 'jump',
+        position: [lipX, launchPosY + 0.22, lipZ],
+        scale: [lipHx * 2, 0.2, lipHz * 2],
+        color: palette.jumpPad ?? '#fbbf24',
       });
 
       // 2. Void Gap (ball flies through empty space)
@@ -406,22 +422,45 @@ export function generateDailyLevel(seed: string, options?: GenerateOptions): Gen
         type: 'box',
         halfExtents: [hx, 0.25, hz],
         position: [posX, posY, posZ],
-        friction: 0.08,
+        friction: 0.05,
         restitution: 0.4,
+        isBoost: true,
+        boostDirection: [heading.dx, 0, heading.dz],
+        boostSpeed: 28.0,
       });
 
       visuals.push({
         id: `vis-booster-${tileIndex++}`,
-        type: 'straight',
+        type: 'boost',
         position: [posX, posY, posZ],
         scale: [hx * 2, 0.5, hz * 2],
-        color: palette.bumper,
+        color: palette.boost ?? '#f43f5e',
       });
 
       curX += heading.dx * length;
       curZ += heading.dz * length;
       curY += dY;
       prevPieceType = 'booster';
+    }
+
+    if (
+      (s === Math.floor(numSegments * 0.35) || s === Math.floor(numSegments * 0.7)) &&
+      cpIndex <= 2
+    ) {
+      checkpoints.push({
+        index: cpIndex,
+        position: [curX, curY + 0.8, curZ],
+        radius: 3.2,
+      });
+      visuals.push({
+        id: `vis-cp-${cpIndex}`,
+        type: 'checkpoint',
+        position: [curX, curY + 1.2, curZ],
+        scale: [4.0, 2.4, 0.3],
+        color: '#38bdf8',
+        checkpointIndex: cpIndex,
+      });
+      cpIndex++;
     }
 
     if (curY < lowestY) {
@@ -474,6 +513,7 @@ export function generateDailyLevel(seed: string, options?: GenerateOptions): Gen
       position: [goalX, goalY + 0.5, goalZ],
       radius: 2.2,
     },
+    checkpoints,
     deathY: Math.min(lowestY, goalY) - 10.0,
     colliders,
     visuals,

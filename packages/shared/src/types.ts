@@ -25,6 +25,12 @@ export interface SimState {
     angularVelocity: [number, number, number];
   };
   hash: string;
+  isGrounded?: boolean;
+  lastCheckpoint?: number;
+  activeEffects?: {
+    boost?: boolean;
+    jump?: boolean;
+  };
 }
 
 export interface BoxColliderDef {
@@ -34,6 +40,12 @@ export interface BoxColliderDef {
   rotation?: [number, number, number, number]; // [qx, qy, qz, qw]
   restitution?: number;
   friction?: number;
+  isBoost?: boolean;
+  boostDirection?: [number, number, number];
+  boostSpeed?: number;
+  isJumpPad?: boolean;
+  jumpImpulse?: number;
+  isIce?: boolean;
 }
 
 export interface CylinderColliderDef {
@@ -59,11 +71,12 @@ export type ColliderDef = BoxColliderDef | CylinderColliderDef | TrimeshCollider
 
 export interface TileVisual {
   id: string;
-  type: 'pad' | 'ramp' | 'straight' | 'corner' | 'bumper' | 'goal' | 'rail' | 'wall';
+  type: 'pad' | 'ramp' | 'straight' | 'corner' | 'bumper' | 'goal' | 'rail' | 'wall' | 'boost' | 'jump' | 'ice' | 'checkpoint';
   position: [number, number, number];
   rotation?: [number, number, number]; // Euler angles in radians for rendering
   scale?: [number, number, number];
   color?: string;
+  checkpointIndex?: number;
 }
 
 export interface LevelPalette {
@@ -75,8 +88,16 @@ export interface LevelPalette {
   bridge: string;
   bumper: string;
   goal: string;
+  boost?: string;
+  jumpPad?: string;
+  ice?: string;
 }
 
+export interface CheckpointDef {
+  index: number;
+  position: [number, number, number];
+  radius: number;
+}
 
 export interface LevelDefinition {
   id: string;
@@ -87,6 +108,7 @@ export interface LevelDefinition {
     position: [number, number, number];
     radius: number;
   };
+  checkpoints?: CheckpointDef[];
   deathY: number;
   colliders: ColliderDef[];
   visuals: TileVisual[];

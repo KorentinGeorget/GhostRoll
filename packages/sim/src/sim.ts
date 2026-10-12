@@ -1,6 +1,7 @@
 import RAPIER from '@dimforge/rapier3d-deterministic-compat';
 import {
   BALL_RADIUS,
+  BoxColliderDef,
   FIXED_DT,
   GRAVITY_MAGNITUDE,
   InputFrame,
@@ -67,10 +68,19 @@ export function createSimulation(level: LevelDefinition): Simulation {
       continue;
     }
 
-    colDesc.setFriction(col.friction ?? 0.5);
+    if (col.type === 'box') {
+      colDesc.setFriction(col.isIce ? 0.02 : (col.friction ?? 0.5));
+    } else {
+      colDesc.setFriction(col.friction ?? 0.5);
+    }
     colDesc.setRestitution(col.restitution ?? 0.2);
     world.createCollider(colDesc, body);
   }
+
+  // Find interactive pad colliders (boost, jump)
+  const interactivePads = level.colliders.filter(
+    (c): c is BoxColliderDef => c.type === 'box' && (!!c.isBoost || !!c.isJumpPad)
+  );
 
   // Create ball body
   function spawnBall(): RAPIER.RigidBody {
@@ -92,6 +102,9 @@ export function createSimulation(level: LevelDefinition): Simulation {
   let ballBody = spawnBall();
   let tick = 0;
   let status: SimStatus = 'ready';
+  let isGrounded = false;
+  let lastCheckpoint = 0;
+  let activeEffects = { boost: false, jump: false };
 
   function buildState(): SimState {
     const pos = ballBody.translation();
@@ -120,6 +133,9 @@ export function createSimulation(level: LevelDefinition): Simulation {
         angularVelocity: [ang.x, ang.y, ang.z],
       },
       hash,
+      isGrounded,
+      lastCheckpoint,
+      activeEffects: { ...activeEffects },
     };
   }
 
@@ -161,6 +177,77 @@ export function createSimulation(level: LevelDefinition): Simulation {
       tick++;
 
       const pos = ballBody.translation();
+
+      // Check ground contact
+      const groundRay = new RAPIER.Ray(
+        { x: pos.x, y: pos.y - (BALL_RADIUS + 0.01), z: pos.z },
+        { x: 0.0, y: -1.0, z: 0.0 }
+      );
+      const groundHit = world.castRay(groundRay, 0.28, true);
+      isGrounded = groundHit !== null;
+
+      // Interactive Pads (Boost, Super-Jump)
+      activeEffects = { boost: false, jump: false };
+      for (const pad of interactivePads) {
+        const [bx, by, bz] = pad.position;
+        const [hx, hy, hz] = pad.halfExtents;
+        if (
+          pos.x >= bx - hx - BALL_RADIUS * 0.4 &&
+          pos.x <= bx + hx + BALL_RADIUS * 0.4 &&
+          pos.z >= bz - hz - BALL_RADIUS * 0.4 &&
+          pos.z <= bz + hz + BALL_RADIUS * 0.4 &&
+          pos.y >= by - 0.2 &&
+          pos.y <= by + hy + BALL_RADIUS + 0.35
+        ) {
+          if (pad.isBoost) {
+            activeEffects.boost = true;
+            const bDir = pad.boostDirection ?? [0, 0, 1];
+            const maxSpeed = pad.boostSpeed ?? 28.0;
+            const curVel = ballBody.linvel();
+            const currentSpeedInDir = curVel.x * bDir[0] + curVel.y * bDir[1] + curVel.z * bDir[2];
+            if (currentSpeedInDir < maxSpeed) {
+              ballBody.setLinvel(
+                {
+                  x: curVel.x + bDir[0] * 3.5,
+                  y: curVel.y,
+                  z: curVel.z + bDir[2] * 3.5,
+                },
+                true
+              );
+            }
+          }
+          if (pad.isJumpPad) {
+            activeEffects.jump = true;
+            const curVel = ballBody.linvel();
+            const jumpImp = pad.jumpImpulse ?? 16.5;
+            if (curVel.y < jumpImp) {
+              ballBody.setLinvel(
+                {
+                  x: curVel.x * 1.05,
+                  y: jumpImp,
+                  z: curVel.z * 1.05,
+                },
+                true
+              );
+            }
+          }
+        }
+      }
+
+      // Checkpoint passing
+      if (level.checkpoints && level.checkpoints.length > 0) {
+        for (const cp of level.checkpoints) {
+          const cdx = pos.x - cp.position[0];
+          const cdy = pos.y - cp.position[1];
+          const cdz = pos.z - cp.position[2];
+          const cDistSq = cdx * cdx + cdz * cdz;
+          if (cDistSq <= cp.radius * cp.radius && Math.abs(cdy) <= 3.0) {
+            if (cp.index > lastCheckpoint) {
+              lastCheckpoint = cp.index;
+            }
+          }
+        }
+      }
 
       // Check win condition (sphere vs cylinder/circle around goal)
       const dx = pos.x - level.goal.position[0];

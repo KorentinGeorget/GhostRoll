@@ -63,6 +63,13 @@ export const BallMesh: React.FC<BallMeshProps> = ({
     return null;
   }, []);
 
+  const TRAIL_LENGTH = 16;
+  const trailPositions = useRef<THREE.Vector3[]>(
+    Array.from({ length: 16 }, () => new THREE.Vector3(position[0], position[1], position[2]))
+  );
+  const lineGeometryRef = useRef<THREE.BufferGeometry>(null);
+  const lineMatRef = useRef<THREE.LineBasicMaterial>(null);
+
   useFrame((_, delta) => {
     let px: number;
     let py: number;
@@ -86,12 +93,20 @@ export const BallMesh: React.FC<BallMeshProps> = ({
       vz = velocity[2];
     }
 
+    const horizontalSpeed = Math.sqrt(vx * vx + vz * vz);
+
     if (meshRef.current) {
       meshRef.current.position.set(px, py, pz);
 
       // Roll ball according to linear velocity: dtheta = (v / R) * dt
       meshRef.current.rotation.z -= (vx / BALL_RADIUS) * delta;
       meshRef.current.rotation.x += (vz / BALL_RADIUS) * delta;
+
+      // Speed-scaled neon emissive glow
+      const mat = meshRef.current.material as THREE.MeshStandardMaterial;
+      if (mat) {
+        mat.emissiveIntensity = 0.25 + Math.min(1.2, horizontalSpeed * 0.08);
+      }
     }
 
     // Dynamic ground drop shadow & vertical tether
@@ -127,6 +142,27 @@ export const BallMesh: React.FC<BallMeshProps> = ({
       } else {
         tetherMeshRef.current.visible = false;
       }
+    }
+
+    // Update motion trail history
+    const pts = trailPositions.current;
+    for (let i = pts.length - 1; i > 0; i--) {
+      pts[i].copy(pts[i - 1]);
+    }
+    pts[0].set(px, py, pz);
+
+    if (lineGeometryRef.current) {
+      const posAttr = lineGeometryRef.current.attributes.position as THREE.BufferAttribute;
+      if (posAttr) {
+        for (let i = 0; i < pts.length; i++) {
+          posAttr.setXYZ(i, pts[i].x, pts[i].y, pts[i].z);
+        }
+        posAttr.needsUpdate = true;
+      }
+    }
+
+    if (lineMatRef.current) {
+      lineMatRef.current.opacity = horizontalSpeed > 2.5 ? Math.min(0.7, (horizontalSpeed - 2.5) * 0.07) : 0;
     }
   });
 
@@ -169,6 +205,30 @@ export const BallMesh: React.FC<BallMeshProps> = ({
           depthWrite={false}
         />
       </mesh>
+
+      {/* 4. Speed Ribbon Motion Trail */}
+      <line>
+        <bufferGeometry
+          ref={lineGeometryRef}
+          onUpdate={(geo) => {
+            const positions = new Float32Array(TRAIL_LENGTH * 3);
+            for (let i = 0; i < TRAIL_LENGTH; i++) {
+              positions[i * 3] = position[0];
+              positions[i * 3 + 1] = position[1];
+              positions[i * 3 + 2] = position[2];
+            }
+            geo.setAttribute('position', new THREE.BufferAttribute(positions, 3));
+          }}
+        />
+        <lineBasicMaterial
+          ref={lineMatRef}
+          color="#38bdf8"
+          transparent
+          opacity={0}
+          blending={THREE.AdditiveBlending}
+          depthWrite={false}
+        />
+      </line>
     </group>
   );
 };

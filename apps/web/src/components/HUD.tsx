@@ -22,6 +22,13 @@ import {
   Flag,
 } from 'lucide-react';
 
+export interface CheckpointSplitInfo {
+  index: number;
+  deltaSeconds: number | null;
+  splitTime: number;
+  timestamp: number;
+}
+
 interface HUDProps {
   status: SimStatus;
   tick: number;
@@ -53,6 +60,7 @@ interface HUDProps {
   isCalibrated?: boolean;
   isMuted?: boolean;
   onToggleMute?: () => void;
+  lastSplit?: CheckpointSplitInfo | null;
 }
 
 const cleanName = (n: string) => n.replace(/\s*\(Daily[^)]*\)\s*$/, '');
@@ -96,6 +104,7 @@ export const HUD: React.FC<HUDProps> = ({
   isCalibrated: _isCalibrated,
   isMuted = false,
   onToggleMute,
+  lastSplit,
 }) => {
   const t = TRANSLATIONS[lang];
   const [copiedShare, setCopiedShare] = useState(false);
@@ -277,6 +286,30 @@ export const HUD: React.FC<HUDProps> = ({
             </div>
           </div>
         </div>
+
+        {/* Trackmania Checkpoint Split Comparison Banner */}
+        {lastSplit && Date.now() - lastSplit.timestamp < 2600 && (
+          <div className="mt-2 animate-in fade-in zoom-in-95 duration-150">
+            <div
+              className={`px-4 py-1.5 rounded-2xl border font-mono font-black text-base sm:text-lg tracking-tight shadow-2xl flex items-center space-x-2.5 backdrop-blur-md ${
+                lastSplit.deltaSeconds === null
+                  ? 'bg-sky-500/25 border-sky-400/50 text-sky-200'
+                  : lastSplit.deltaSeconds <= 0
+                  ? 'bg-emerald-500/25 border-emerald-400/60 text-emerald-300'
+                  : 'bg-rose-500/25 border-rose-400/60 text-rose-300'
+              }`}
+            >
+              <span className="text-[10px] uppercase font-extrabold px-1.5 py-0.5 rounded-md bg-black/40 text-zinc-300 border border-white/10">
+                CP {lastSplit.index}
+              </span>
+              <span className="tabular-nums">
+                {lastSplit.deltaSeconds !== null
+                  ? `${lastSplit.deltaSeconds <= 0 ? '-' : '+'}${Math.abs(lastSplit.deltaSeconds).toFixed(2)}s`
+                  : `${lastSplit.splitTime.toFixed(2)}s`}
+              </span>
+            </div>
+          </div>
+        )}
       </div>
 
       {/* =========================================================================

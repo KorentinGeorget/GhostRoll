@@ -149,6 +149,13 @@ function CameraRig({
     state.camera.position.copy(currentCamPos.current);
     state.camera.lookAt(currentLookAt.current);
     state.camera.rotation.z += currentBank.current;
+
+    // Trackmania Dynamic Speed FOV expansion (widens view at high speed for dramatic speed feel)
+    if (state.camera instanceof THREE.PerspectiveCamera) {
+      const targetFov = 50 + Math.min(15, horizontalSpeed * 0.7);
+      state.camera.fov = THREE.MathUtils.damp(state.camera.fov, targetFov, 4.0, delta);
+      state.camera.updateProjectionMatrix();
+    }
   });
 
   return null;

@@ -44,6 +44,9 @@ export function generateDailyPalette(seed: string): LevelPalette {
     trackSecondary: hslToHex((baseHue + 35) % 360, 75, 52),
     bridge: hslToHex((baseHue + 180) % 360, 85, 55),
     bumper: hslToHex((baseHue + 290) % 360, 90, 60),
+    boost: hslToHex((baseHue + 15) % 360, 95, 55),
+    jumpPad: hslToHex((baseHue + 45) % 360, 95, 55),
+    ice: hslToHex(195, 80, 70),
     goal: '#10b981',
   };
 }

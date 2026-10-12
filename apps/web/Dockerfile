@@ -6,7 +6,7 @@ RUN corepack enable && corepack prepare pnpm@12.10.1 --activate
 WORKDIR /app
 
 FROM base AS builder
-COPY pnpm-lock.yaml pnpm-workspace.yaml package.json ./
+COPY pnpm-lock.yaml pnpm-workspace.yaml package.json tsconfig.base.json ./
 COPY packages/shared/package.json ./packages/shared/
 COPY packages/sim/package.json ./packages/sim/
 COPY apps/web/package.json ./apps/web/
