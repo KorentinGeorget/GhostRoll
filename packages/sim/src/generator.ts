@@ -173,35 +173,6 @@ export function generateDailyLevel(seed: string, options?: GenerateOptions): Gen
           color: isRamp ? palette.trackSecondary : palette.trackPrimary,
         });
 
-        // Edge slalom bumper hazard (placed strictly on the outer curbs, leaving central 2.4m free)
-        if (rng.nextFloat() > 0.55 && s > 0) {
-          const perpX = -heading.dz;
-          const perpZ = heading.dx;
-          const sideOffset = rng.choice([-1.45, 1.45]);
-
-          const bumperX = posX + perpX * sideOffset;
-          const bumperZ = posZ + perpZ * sideOffset;
-          const bumperY = posY + 0.45;
-
-          colliders.push({
-            type: 'cylinder',
-            halfHeight: 0.35,
-            radius: 0.45,
-            position: [bumperX, bumperY, bumperZ],
-            restitution: 1.2,
-            friction: 0.1,
-            isBumper: true,
-          });
-
-          visuals.push({
-            id: `vis-bumper-${tileIndex++}`,
-            type: 'bumper',
-            position: [bumperX, bumperY, bumperZ],
-            scale: [0.9, 0.7, 0.9],
-            color: palette.bumper,
-          });
-        }
-
         occupiedBoxes.push(box);
         curX += heading.dx * length;
         curZ += heading.dz * length;

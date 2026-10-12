@@ -79,18 +79,18 @@ export const SkyEnvironment: React.FC<SkyEnvironmentProps> = ({ palette }) => {
     return pos;
   }, []);
 
-  // 3. Distant floating monoliths & geometric crystal spires
+  // 3. Deep horizon floating monoliths & geometric crystal spires (safely distant from track)
   const spires = useMemo(() => {
     const list = [];
     const count = 32;
     for (let i = 0; i < count; i++) {
       const angle = (i / count) * Math.PI * 2 + pseudoRandom(i * 13) * 0.25;
-      const dist = 70 + pseudoRandom(i * 17) * 95;
-      const x = Math.cos(angle) * dist + 10;
-      const z = Math.sin(angle) * dist + 25;
-      const height = 28 + pseudoRandom(i * 23) * 60;
-      const radius = 3.5 + pseudoRandom(i * 29) * 5.5;
-      const y = -14 + height / 2 + (pseudoRandom(i * 37) - 0.5) * 12;
+      const dist = 195 + pseudoRandom(i * 17) * 45;
+      const x = Math.cos(angle) * dist;
+      const z = Math.sin(angle) * dist;
+      const height = 55 + pseudoRandom(i * 23) * 85;
+      const radius = 6 + pseudoRandom(i * 29) * 8;
+      const y = -36 + height / 2;
       const isHex = i % 3 === 0;
       const isCrystal = i % 4 === 1;
 
@@ -223,16 +223,16 @@ export const SkyEnvironment: React.FC<SkyEnvironmentProps> = ({ palette }) => {
       </points>
 
       {/* =========================================================================
-          3. COLOSSAL ORBITAL MEGA-RING (Sci-Fi Halo Mega-Structure)
+          3. COLOSSAL ORBITAL MEGA-RING (Sci-Fi Halo Mega-Structure in deep sky)
          ========================================================================= */}
       <group
         ref={orbitalRingRef}
-        position={[40, 25, 110]}
-        rotation={[Math.PI / 4, 0.35, -Math.PI / 6]}
+        position={[0, 160, 160]}
+        rotation={[Math.PI / 3, 0.2, -0.1]}
       >
         {/* Main massive structural torus */}
         <mesh>
-          <torusGeometry args={[130, 2.2, 16, 96]} />
+          <torusGeometry args={[145, 2.4, 16, 96]} />
           <meshStandardMaterial
             color="#0b101e"
             roughness={0.25}
@@ -243,7 +243,7 @@ export const SkyEnvironment: React.FC<SkyEnvironmentProps> = ({ palette }) => {
         </mesh>
         {/* Inner high-energy glowing laser ribbon */}
         <mesh>
-          <torusGeometry args={[129, 0.45, 8, 96]} />
+          <torusGeometry args={[144, 0.5, 8, 96]} />
           <meshBasicMaterial
             color={secondaryColor}
             transparent
@@ -255,7 +255,7 @@ export const SkyEnvironment: React.FC<SkyEnvironmentProps> = ({ palette }) => {
       {/* =========================================================================
           4. RADIANT CELESTIAL CORE / HORIZON SUN & CORONA
          ========================================================================= */}
-      <group ref={celestialCoreRef} position={[60, 48, 125]}>
+      <group ref={celestialCoreRef} position={[70, 75, 175]}>
         {/* Inner incandescent core */}
         <mesh>
           <sphereGeometry args={[13, 24, 24]} />
