@@ -22,10 +22,13 @@ services:
     depends_on:
       db:
         condition: service_healthy
+    volumes:
+      - server_data:/app/data
     environment:
       NODE_ENV: production
       PORT: 3001
       DATABASE_URL: postgres://ghostroll:${POSTGRES_PASSWORD:-ghostroll_secure_password}@db:5432/ghostroll
+      PGLITE_DATA_DIR: /app/data/pglite
       COOKIE_SECRET: ${COOKIE_SECRET:-ghostroll-super-secret-cookie-key-production-32chars}
       GOOGLE_CLIENT_ID: ${GOOGLE_CLIENT_ID:-}
       GOOGLE_CLIENT_SECRET: ${GOOGLE_CLIENT_SECRET:-}
@@ -49,3 +52,6 @@ services:
 
 volumes:
   pgdata:
+    name: ghostroll_postgres_data
+  server_data:
+    name: ghostroll_server_data

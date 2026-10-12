@@ -3,7 +3,7 @@ import cors from '@fastify/cors';
 import cookie from '@fastify/cookie';
 import crypto from 'node:crypto';
 import { eq, and, sql, asc, gt } from 'drizzle-orm';
-import { DB, getDb, runs, users, syncCodes } from './db/index.js';
+import { DB, getDb, getStorageType, runs, users, syncCodes } from './db/index.js';
 
 import { getOrCreateGuestUser, linkGoogleAccount } from './services/auth.service.js';
 import { validateReplay } from './services/validation.service.js';
@@ -38,7 +38,11 @@ export async function buildApp(opts: AppOptions = {}): Promise<FastifyInstance> 
 
   // Health check
   app.get('/health', async () => {
-    return { status: 'ok', timestamp: new Date().toISOString() };
+    return {
+      status: 'ok',
+      storage: getStorageType(),
+      timestamp: new Date().toISOString(),
+    };
   });
 
   // Daily level

@@ -1,3 +1,4 @@
+import fs from 'node:fs';
 import { drizzle as drizzlePg } from 'drizzle-orm/postgres-js';
 import { drizzle as drizzlePglite } from 'drizzle-orm/pglite';
 import postgres from 'postgres';
@@ -5,8 +6,14 @@ import { PGlite } from '@electric-sql/pglite';
 import * as schema from './schema.js';
 
 export type DB = ReturnType<typeof drizzlePg<typeof schema>> | ReturnType<typeof drizzlePglite<typeof schema>>;
+export type StorageType = 'postgres' | 'pglite-disk' | 'pglite-memory';
 
 let dbInstance: DB | null = null;
+let currentStorageType: StorageType = 'pglite-memory';
+
+export function getStorageType(): StorageType {
+  return currentStorageType;
+}
 
 export async function getDb(): Promise<DB> {
   if (dbInstance) return dbInstance;
@@ -14,36 +21,79 @@ export async function getDb(): Promise<DB> {
   const dbUrl = process.env.DATABASE_URL;
 
   if (dbUrl) {
-    let attempts = 4;
+    const maxAttempts = 12;
+    let attempts = maxAttempts;
+    let lastError: any = null;
+
     while (attempts > 0) {
+      let client: postgres.Sql | null = null;
       try {
-        const client = postgres(dbUrl, { connect_timeout: 4 });
+        client = postgres(dbUrl, {
+          connect_timeout: 5,
+          max: 10,
+          idle_timeout: 20,
+        });
         const db = drizzlePg(client, { schema });
         await initializeTables(db);
         dbInstance = db;
+        currentStorageType = 'postgres';
         console.log('✅ Successfully connected to PostgreSQL database');
         return dbInstance;
       } catch (err: any) {
+        lastError = err;
         attempts--;
-        console.warn(`[DB] PostgreSQL connection attempt failed (${attempts} retries remaining):`, err?.message || err);
+        if (client) {
+          try {
+            await client.end({ timeout: 1 });
+          } catch {
+            // ignore close error during retry
+          }
+        }
+        console.warn(
+          `[DB] PostgreSQL connection attempt failed (${maxAttempts - attempts}/${maxAttempts}):`,
+          err?.message || err
+        );
         if (attempts > 0) {
-          await new Promise((r) => setTimeout(r, 2000));
+          await new Promise((r) => setTimeout(r, 2500));
         }
       }
     }
-    console.warn('⚠️ Could not connect to PostgreSQL. Falling back to embedded PGlite storage to keep API live.');
+    console.warn(
+      `⚠️ Could not connect to PostgreSQL after ${maxAttempts} attempts (${lastError?.message || lastError}). Falling back to persistent PGlite storage.`
+    );
   }
 
-  // Embedded PGlite fallback ensures zero downtime
+  // Persistent disk-backed PGlite fallback ensures ZERO data loss across pushes/restarts
+  const dataDir = process.env.PGLITE_DATA_DIR || (process.env.NODE_ENV === 'production' ? '/app/data/pglite' : undefined);
+
+  if (dataDir) {
+    try {
+      fs.mkdirSync(dataDir, { recursive: true });
+      const pglite = new PGlite(dataDir);
+      await pglite.waitReady;
+      dbInstance = drizzlePglite(pglite, { schema });
+      currentStorageType = 'pglite-disk';
+      await initializeTables(dbInstance);
+      console.log(`✅ Initialized persistent disk-backed PGlite database storage at: ${dataDir}`);
+      return dbInstance;
+    } catch (err: any) {
+      console.error(`[DB] Failed to initialize persistent PGlite at ${dataDir}:`, err?.message || err);
+    }
+  }
+
+  // In-memory PGlite fallback (testing or ephemeral environment)
   const pglite = new PGlite();
+  await pglite.waitReady;
   dbInstance = drizzlePglite(pglite, { schema });
+  currentStorageType = 'pglite-memory';
   await initializeTables(dbInstance);
-  console.log('✅ Initialized embedded database storage');
+  console.log('✅ Initialized ephemeral in-memory database storage (dev/test mode)');
   return dbInstance;
 }
 
 export async function createTestDb(): Promise<DB> {
   const pglite = new PGlite();
+  await pglite.waitReady;
   const testDb = drizzlePglite(pglite, { schema });
   await initializeTables(testDb);
   return testDb;
