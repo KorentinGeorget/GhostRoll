@@ -5,7 +5,7 @@ services:
     environment:
       POSTGRES_DB: ghostroll
       POSTGRES_USER: ghostroll
-      POSTGRES_PASSWORD: ghostroll_secure_password
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-ghostroll_secure_password}
     volumes:
       - pgdata:/var/lib/postgresql/data
     healthcheck:
@@ -28,10 +28,11 @@ services:
       DATABASE_URL: postgres://ghostroll:${POSTGRES_PASSWORD:-ghostroll_secure_password}@db:5432/ghostroll
       COOKIE_SECRET: ${COOKIE_SECRET:-ghostroll-super-secret-cookie-key-production-32chars}
     healthcheck:
-      test: ["CMD-SHELL", "node -e 'fetch(\"http://localhost:3001/health\").then(r => r.ok ? process.exit(0) : process.exit(1))'"]
-      interval: 10s
+      test: ["CMD-SHELL", "node -e 'fetch(\"http://127.0.0.1:3001/health\").then(r => process.exit(r.ok ? 0 : 1)).catch(() => process.exit(1))'"]
+      interval: 5s
       timeout: 5s
-      retries: 3
+      retries: 6
+      start_period: 25s
 
   web:
     build:
@@ -39,8 +40,7 @@ services:
       dockerfile: apps/web/Dockerfile
     restart: always
     depends_on:
-      server:
-        condition: service_healthy
+      - server
     ports:
       - "80"
 
