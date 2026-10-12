@@ -292,8 +292,12 @@ export const App: React.FC = () => {
 
     const pb = getStoredPB(level.id);
     setPersonalBest(pb);
-    setSelectedLeaderboardGhost(null);
-    setActiveGhostSource('pb');
+    if (pb) {
+      setActiveGhostSource('pb');
+      setSelectedLeaderboardGhost(null);
+    } else {
+      setActiveGhostSource('leaderboard');
+    }
 
     return () => {
       mounted = false;
@@ -467,13 +471,15 @@ export const App: React.FC = () => {
       // Sub-tick continuous ghost interpolation
       if (showGhost) {
         let activeSamples: GhostSample[] | null = null;
-        if (activeGhostSource === 'leaderboard' && selectedLeaderboardGhost?.ghostSamples) {
+        if (activeGhostSource === 'leaderboard' && selectedLeaderboardGhost?.ghostSamples?.length) {
           activeSamples = selectedLeaderboardGhost.ghostSamples;
-        } else if (personalBest?.samples) {
+        } else if (personalBest?.samples?.length) {
           activeSamples = personalBest.samples;
+        } else if (selectedLeaderboardGhost?.ghostSamples?.length) {
+          activeSamples = selectedLeaderboardGhost.ghostSamples;
         }
 
-        if (activeSamples) {
+        if (activeSamples && activeSamples.length > 0) {
           liveRenderRef.current.ghostPos = sampleGhostPosition(
             activeSamples,
             state.tick + alpha
