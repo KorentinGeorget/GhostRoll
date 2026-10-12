@@ -14,17 +14,31 @@ export async function getDb(): Promise<DB> {
   const dbUrl = process.env.DATABASE_URL;
 
   if (dbUrl) {
-    const client = postgres(dbUrl);
-    dbInstance = drizzlePg(client, { schema });
-  } else {
-    // Embedded PGlite for zero-config local dev and tests
-    const pglite = new PGlite();
-    dbInstance = drizzlePglite(pglite, { schema });
+    let attempts = 4;
+    while (attempts > 0) {
+      try {
+        const client = postgres(dbUrl, { connect_timeout: 4 });
+        const db = drizzlePg(client, { schema });
+        await initializeTables(db);
+        dbInstance = db;
+        console.log('✅ Successfully connected to PostgreSQL database');
+        return dbInstance;
+      } catch (err: any) {
+        attempts--;
+        console.warn(`[DB] PostgreSQL connection attempt failed (${attempts} retries remaining):`, err?.message || err);
+        if (attempts > 0) {
+          await new Promise((r) => setTimeout(r, 2000));
+        }
+      }
+    }
+    console.warn('⚠️ Could not connect to PostgreSQL. Falling back to embedded PGlite storage to keep API live.');
   }
 
-  // Ensure tables exist
+  // Embedded PGlite fallback ensures zero downtime
+  const pglite = new PGlite();
+  dbInstance = drizzlePglite(pglite, { schema });
   await initializeTables(dbInstance);
-
+  console.log('✅ Initialized embedded database storage');
   return dbInstance;
 }
 

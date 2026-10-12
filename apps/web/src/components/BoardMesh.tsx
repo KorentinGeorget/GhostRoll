@@ -10,40 +10,31 @@ interface BoardMeshProps {
 }
 
 const CheckpointGate: React.FC<{ vis: TileVisual }> = ({ vis }) => {
-  const hologramRef = useRef<THREE.Mesh>(null);
-  const [width, height] = [vis.scale?.[0] ?? 4.0, vis.scale?.[1] ?? 2.2];
+  const width = vis.scale?.[0] ?? 4.0;
   const color = vis.color || '#38bdf8';
-
-  useFrame((state) => {
-    if (hologramRef.current) {
-      const mat = hologramRef.current.material as THREE.MeshBasicMaterial;
-      if (mat) {
-        mat.opacity = 0.22 + 0.08 * Math.sin(state.clock.elapsedTime * 4.5);
-      }
-    }
-  });
 
   return (
     <group position={vis.position} rotation={vis.rotation ? new THREE.Euler(...vis.rotation) : undefined}>
-      {/* Left Pillar */}
-      <mesh position={[-width / 2 + 0.12, height / 2, 0]} castShadow>
-        <boxGeometry args={[0.24, height, 0.24]} />
-        <meshStandardMaterial color="#0f172a" metalness={0.9} roughness={0.2} emissive={color} emissiveIntensity={0.3} />
+      {/* Sleek ground neon timing strip flush with the track surface */}
+      <mesh position={[0, 0.02, 0]} receiveShadow>
+        <boxGeometry args={[width * 0.95, 0.03, 0.35]} />
+        <meshStandardMaterial
+          color={color}
+          emissive={color}
+          emissiveIntensity={1.4}
+          roughness={0.2}
+          transparent
+          opacity={0.85}
+        />
       </mesh>
-      {/* Right Pillar */}
-      <mesh position={[width / 2 - 0.12, height / 2, 0]} castShadow>
-        <boxGeometry args={[0.24, height, 0.24]} />
-        <meshStandardMaterial color="#0f172a" metalness={0.9} roughness={0.2} emissive={color} emissiveIntensity={0.3} />
+      {/* Subtle low-profile edge sensor studs */}
+      <mesh position={[-width * 0.48, 0.08, 0]}>
+        <cylinderGeometry args={[0.06, 0.06, 0.16, 16]} />
+        <meshStandardMaterial color={color} emissive={color} emissiveIntensity={1.8} />
       </mesh>
-      {/* Top Crossbar Arch */}
-      <mesh position={[0, height + 0.1, 0]} castShadow>
-        <boxGeometry args={[width, 0.26, 0.26]} />
-        <meshStandardMaterial color={color} emissive={color} emissiveIntensity={1.4} roughness={0.2} />
-      </mesh>
-      {/* Hologram Curtain */}
-      <mesh ref={hologramRef} position={[0, height / 2, 0]}>
-        <planeGeometry args={[width - 0.3, height]} />
-        <meshBasicMaterial color={color} transparent opacity={0.25} side={THREE.DoubleSide} depthWrite={false} />
+      <mesh position={[width * 0.48, 0.08, 0]}>
+        <cylinderGeometry args={[0.06, 0.06, 0.16, 16]} />
+        <meshStandardMaterial color={color} emissive={color} emissiveIntensity={1.8} />
       </mesh>
     </group>
   );

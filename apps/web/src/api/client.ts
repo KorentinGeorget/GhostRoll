@@ -55,12 +55,27 @@ export async function submitRun(payload: ReplayPayload): Promise<RunSubmitRespon
       credentials: 'include',
       body: JSON.stringify(payload),
     });
-    return await res.json();
+    const text = await res.text();
+    let data: any;
+    try {
+      data = JSON.parse(text);
+    } catch {
+      return {
+        success: false,
+        error: `HTTP_${res.status}`,
+        reason: res.status === 502
+          ? 'Le serveur API est indisponible (502 Bad Gateway)'
+          : res.status === 413
+          ? 'Replay trop volumineux (413 Payload Too Large)'
+          : `Erreur serveur (${res.status}) : réponse non-JSON`,
+      };
+    }
+    return data;
   } catch (err: any) {
     return {
       success: false,
       error: 'NETWORK_ERROR',
-      reason: err?.message || 'Could not connect to verification server',
+      reason: err?.message || 'Impossible de joindre le serveur de vérification',
     };
   }
 }
