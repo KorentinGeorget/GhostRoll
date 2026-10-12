@@ -135,7 +135,7 @@ export const TRACK_PRESETS: Array<{ id: string; name: string; theme: string; pie
       'drop',
       'corner_right',
       'straight',
-      'checkpoint',
+      'straight',
       'corner_right',
       'straight',
     ],
@@ -169,7 +169,7 @@ export const TRACK_PRESETS: Array<{ id: string; name: string; theme: string; pie
       'ice',
       'corner_left',
       'straight',
-      'checkpoint',
+      'straight',
       'ice',
       'corner_right',
       'booster',
@@ -367,30 +367,6 @@ export function buildCustomLevel(
         restitution: 0.2,
       });
 
-      const perpX = -heading.dz;
-      const perpZ = heading.dx;
-      const railOffset = 2.4;
-      const railHalfL = length / 2;
-      const railHx = heading.dx !== 0 ? railHalfL : 0.15;
-      const railHz = heading.dz !== 0 ? railHalfL : 0.15;
-
-      colliders.push(
-        {
-          type: 'box',
-          halfExtents: [railHx, 0.45, railHz],
-          position: [posX + perpX * railOffset, posY + 0.55, posZ + perpZ * railOffset],
-          friction: 0.15,
-          restitution: 0.2,
-        },
-        {
-          type: 'box',
-          halfExtents: [railHx, 0.45, railHz],
-          position: [posX - perpX * railOffset, posY + 0.55, posZ - perpZ * railOffset],
-          friction: 0.15,
-          restitution: 0.2,
-        }
-      );
-
       visuals.push({
         id: `vis-drop-${tileIndex++}`,
         type: 'ramp',
@@ -424,20 +400,6 @@ export function buildCustomLevel(
         position: [cornerX, cornerY, cornerZ],
         scale: [turnSize, 0.5, turnSize],
         color: palette.trackSecondary,
-      });
-
-      // Outer safety retention barrier
-      const outRailX = cornerX + heading.dx * (turnSize / 2 - 0.15);
-      const outRailZ = cornerZ + heading.dz * (turnSize / 2 - 0.15);
-      const rHx = heading.dx !== 0 ? 0.15 : turnSize / 2;
-      const rHz = heading.dz !== 0 ? 0.15 : turnSize / 2;
-
-      colliders.push({
-        type: 'box',
-        halfExtents: [rHx, 0.45, rHz],
-        position: [outRailX, cornerY + 0.55, outRailZ],
-        friction: 0.15,
-        restitution: 0.2,
       });
 
       if (isRight) {
@@ -637,7 +599,7 @@ export function buildCustomLevel(
       curZ += heading.dz * length;
       curY += dY;
     } else if (piece === 'checkpoint') {
-      // Split timing checkpoint with road segment
+      // Legacy backwards-compatibility: treat as standard straight segment
       const length = 7.0;
       const dY = -0.15;
       const posX = curX + heading.dx * (length / 2);
@@ -655,27 +617,12 @@ export function buildCustomLevel(
       });
 
       visuals.push({
-        id: `vis-cp-road-${tileIndex++}`,
+        id: `vis-track-${tileIndex++}`,
         type: 'straight',
         position: [posX, posY, posZ],
         scale: [hx * 2, 0.5, hz * 2],
         color: palette.trackPrimary,
       });
-
-      checkpoints.push({
-        index: cpIndex,
-        position: [posX, posY + 0.35, posZ],
-        radius: 3.5,
-      });
-
-      visuals.push({
-        id: `vis-cp-${cpIndex}`,
-        type: 'checkpoint',
-        position: [posX, posY + 0.26, posZ],
-        scale: [4.4, 0.05, 0.4],
-        checkpointIndex: cpIndex,
-      });
-      cpIndex++;
 
       curX += heading.dx * length;
       curZ += heading.dz * length;

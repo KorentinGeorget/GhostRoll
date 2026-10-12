@@ -58,39 +58,39 @@ const PIECE_CONFIGS: Array<{
     icon: '┃',
     hotkey: '1',
     color: 'from-blue-600/30 to-indigo-600/30 border-blue-500/40 text-blue-300',
-    desc: '7m standard speedway',
+    desc: 'Ligne droite standard (7m)',
   },
   {
     type: 'corner_right',
     labelKey: 'pieceCornerRight',
-    icon: '┓',
+    icon: '↱',
     hotkey: '2',
     color: 'from-cyan-600/30 to-teal-600/30 border-cyan-500/40 text-cyan-300',
-    desc: '90° clockwise with safety rail',
+    desc: 'Virage 90° vers la droite',
   },
   {
     type: 'corner_left',
     labelKey: 'pieceCornerLeft',
-    icon: '┏',
+    icon: '↰',
     hotkey: '3',
     color: 'from-cyan-600/30 to-teal-600/30 border-cyan-500/40 text-cyan-300',
-    desc: '90° counter-clockwise with rail',
+    desc: 'Virage 90° vers la gauche',
   },
   {
     type: 'ramp',
     labelKey: 'pieceRamp',
-    icon: '▲',
+    icon: '↘',
     hotkey: '4',
     color: 'from-amber-600/30 to-orange-600/30 border-amber-500/40 text-amber-300',
-    desc: 'Smooth downhill elevation',
+    desc: 'Descente douce modérée (dénivelé -0.45m)',
   },
   {
     type: 'drop',
     labelKey: 'pieceDrop',
-    icon: '▼',
+    icon: '⏬',
     hotkey: '5',
     color: 'from-red-600/30 to-rose-600/30 border-red-500/40 text-red-300',
-    desc: 'Roller-coaster steep drop',
+    desc: 'Descente raide (dénivelé -0.85m, forte accélération)',
   },
   {
     type: 'booster',
@@ -98,7 +98,7 @@ const PIECE_CONFIGS: Array<{
     icon: '⚡',
     hotkey: '6',
     color: 'from-yellow-500/30 to-amber-600/30 border-yellow-400/50 text-yellow-300',
-    desc: 'Turbo acceleration plate (+20m/s)',
+    desc: 'Turbo Boost (+20 km/h vers l\'avant)',
   },
   {
     type: 'ice',
@@ -106,31 +106,23 @@ const PIECE_CONFIGS: Array<{
     icon: '❄',
     hotkey: '7',
     color: 'from-sky-500/30 to-blue-600/30 border-sky-400/50 text-sky-200',
-    desc: 'Ultra slick drift surface (friction 0.04)',
+    desc: 'Verglas Drift (friction quasi nulle 0.04)',
   },
   {
     type: 'jump_gap',
     labelKey: 'pieceJump',
-    icon: '⤻',
+    icon: '🚀',
     hotkey: '8',
     color: 'from-purple-600/30 to-fuchsia-600/30 border-purple-500/40 text-purple-300',
-    desc: 'Launch lip + void gap + landing',
+    desc: 'Tremplin Saut au-dessus du vide (3m)',
   },
   {
     type: 'bridge',
     labelKey: 'pieceBridge',
-    icon: '╎',
+    icon: '═',
     hotkey: '9',
     color: 'from-emerald-600/30 to-teal-600/30 border-emerald-500/40 text-emerald-300',
-    desc: 'Narrow suspension catwalk',
-  },
-  {
-    type: 'checkpoint',
-    labelKey: 'pieceCheckpoint',
-    icon: '⏱',
-    hotkey: '0',
-    color: 'from-sky-400/30 to-indigo-500/30 border-sky-300/40 text-sky-300',
-    desc: 'Intermediate split timing line',
+    desc: 'Passerelle étroite (largeur réduite)',
   },
 ];
 
@@ -472,56 +464,54 @@ export const TrackEditorUI: React.FC<TrackEditorUIProps> = ({
       </header>
 
       {/* =========================================================================
-          MIDDLE: TRACK TIMELINE BREADCRUMB STRIP
+          BOTTOM TOOLBAR: RECAP STRIP & PIECE PALETTE & ACTIONS
          ========================================================================= */}
-      <div className="pointer-events-auto self-center w-full max-w-4xl px-2 my-auto">
-        <div className="glass-panel rounded-2xl p-2.5 border border-white/10 shadow-2xl flex items-center space-x-2 overflow-x-auto custom-scrollbar">
-          {/* Start Tile */}
-          <div className="flex-shrink-0 px-2.5 py-1 rounded-lg bg-emerald-500/20 border border-emerald-500/40 text-emerald-300 text-[11px] font-bold flex items-center space-x-1">
-            <span>🏁</span>
-            <span>{lang === 'fr' ? 'DÉPART' : 'START'}</span>
-          </div>
+      <footer className="pointer-events-auto flex flex-col items-center space-y-2 w-full max-w-5xl self-center">
+        {/* Track Timeline Breadcrumb Strip (Docked cleanly above palette) */}
+        <div className="w-full">
+          <div className="glass-panel rounded-xl px-2.5 py-1.5 border border-white/10 shadow-lg flex items-center space-x-1.5 overflow-x-auto custom-scrollbar">
+            {/* Start Tile */}
+            <div className="flex-shrink-0 px-2 py-0.5 rounded-lg bg-emerald-500/20 border border-emerald-500/40 text-emerald-300 text-[10px] font-bold flex items-center space-x-1">
+              <span>🏁</span>
+              <span>{lang === 'fr' ? 'DÉPART' : 'START'}</span>
+            </div>
 
-          <span className="text-zinc-600 font-bold">→</span>
+            <span className="text-zinc-600 font-bold text-xs">→</span>
 
-          {/* Sequence of placed pieces */}
-          {pieces.map((p, idx) => {
-            const cfg = PIECE_CONFIGS.find((c) => c.type === p);
-            return (
-              <React.Fragment key={idx}>
-                <div
-                  className={`flex-shrink-0 px-2 py-1 rounded-lg text-[11px] font-medium border bg-gradient-to-r flex items-center space-x-1 shadow-sm ${
-                    cfg?.color || 'bg-white/10 text-white'
-                  }`}
-                >
-                  <span className="font-mono opacity-60 text-[9px]">{idx + 1}</span>
-                  <span>{cfg?.icon}</span>
-                  <span className="font-semibold">{t[cfg?.labelKey || 'pieceStraight']}</span>
-                </div>
-                {idx < pieces.length - 1 && (
-                  <span className="text-zinc-600 font-bold">→</span>
-                )}
-              </React.Fragment>
-            );
-          })}
+            {/* Sequence of placed pieces */}
+            {pieces.map((p, idx) => {
+              const cfg = PIECE_CONFIGS.find((c) => c.type === p);
+              return (
+                <React.Fragment key={idx}>
+                  <div
+                    className={`flex-shrink-0 px-2 py-0.5 rounded-lg text-[10px] font-medium border bg-gradient-to-r flex items-center space-x-1 shadow-sm ${
+                      cfg?.color || 'bg-white/10 text-white'
+                    }`}
+                  >
+                    <span className="font-mono opacity-60 text-[9px]">{idx + 1}</span>
+                    <span>{cfg?.icon}</span>
+                    <span className="font-semibold">{t[cfg?.labelKey || 'pieceStraight']}</span>
+                  </div>
+                  {idx < pieces.length - 1 && (
+                    <span className="text-zinc-600 font-bold text-xs">→</span>
+                  )}
+                </React.Fragment>
+              );
+            })}
 
-          <span className="text-zinc-600 font-bold">→</span>
+            <span className="text-zinc-600 font-bold text-xs">→</span>
 
-          {/* Finish Tile */}
-          <div className="flex-shrink-0 px-2.5 py-1 rounded-lg bg-rose-500/20 border border-rose-500/40 text-rose-300 text-[11px] font-bold flex items-center space-x-1">
-            <span>🏆</span>
-            <span>{lang === 'fr' ? 'ARRIVÉE' : 'GOAL'}</span>
+            {/* Finish Tile */}
+            <div className="flex-shrink-0 px-2 py-0.5 rounded-lg bg-rose-500/20 border border-rose-500/40 text-rose-300 text-[10px] font-bold flex items-center space-x-1">
+              <span>🏆</span>
+              <span>{lang === 'fr' ? 'ARRIVÉE' : 'GOAL'}</span>
+            </div>
           </div>
         </div>
-      </div>
 
-      {/* =========================================================================
-          BOTTOM TOOLBAR: PIECE PALETTE & ACTIONS
-         ========================================================================= */}
-      <footer className="pointer-events-auto flex flex-col items-center space-y-2 w-full">
         {/* Pieces Grid */}
-        <div className="glass-panel-elevated rounded-2xl p-2 sm:p-2.5 border border-white/10 shadow-2xl w-full max-w-5xl">
-          <div className="grid grid-cols-5 md:grid-cols-10 gap-1.5 sm:gap-2">
+        <div className="glass-panel-elevated rounded-2xl p-2 sm:p-2.5 border border-white/10 shadow-2xl w-full">
+          <div className="grid grid-cols-3 sm:grid-cols-5 md:grid-cols-9 gap-1.5 sm:gap-2">
             {PIECE_CONFIGS.map((cfg) => (
               <button
                 key={cfg.type}
